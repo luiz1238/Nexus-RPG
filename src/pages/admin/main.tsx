@@ -10,8 +10,8 @@ import ApplicationHead from '../../components/ApplicationHead';
 import DataContainer from '../../components/DataContainer';
 import ErrorToastContainer from '../../components/ErrorToastContainer';
 import PlayerAnnotationsField from '../../components/Player/PlayerAnnotationField';
-import { ErrorLogger, Socket } from '../../contexts';
-import useSocket from '../../hooks/useSocket';
+import { ErrorLogger, Realtime } from '../../contexts';
+import useRealtime from '../../hooks/useRealtime';
 import useToast from '../../hooks/useToast';
 import type { InferSSRProps } from '../../utils';
 import type { DiceConfig, Environment } from '../../utils/config';
@@ -36,10 +36,10 @@ function AdminPanel({
 	npcs,
 	diceConfig,
 }: PageProps) {
-	const [toasts, addToast] = useToast();
-	const socket = useSocket('admin');
+  const [toasts, addToast] = useToast();
+  const { ready } = useRealtime();
 
-	if (!socket)
+  if (!ready)
 		return (
 			<Container className='text-center'>
 				<Row className='align-items-center' style={{ height: '90vh' }}>
@@ -53,7 +53,7 @@ function AdminPanel({
 	return (
 		<>
 			<ErrorLogger.Provider value={addToast}>
-				<Socket.Provider value={socket}>
+      <Realtime.Provider value={null}>
 					<Container className='px-3'>
 						<Row className='display-5 text-center'>
 							<Col>Painel do Mestre</Col>
@@ -82,7 +82,7 @@ function AdminPanel({
 							</DataContainer>
 						</Row>
 					</Container>
-				</Socket.Provider>
+      </Realtime.Provider>
 			</ErrorLogger.Provider>
 			<ErrorToastContainer toasts={toasts} />
 		</>

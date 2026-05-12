@@ -6,8 +6,9 @@ generator client {
 }
 
 datasource db {
-  provider = "mysql"
-  url      = env("CLEARDB_DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 model Player {
@@ -46,7 +47,7 @@ model Info {
 model Attribute {
   id              Int                @id @default(autoincrement())
   name            String
-  color           String             @default("0d6efd") @db.Char(6)
+  color String @default("0d6efd")
   rollable        Boolean
   portrait        PortraitAttribute?
   visibleToAdmin  Boolean            @default(true)
@@ -110,7 +111,7 @@ model Equipment {
 model Item {
   id          Int          @id @default(autoincrement())
   name        String
-  description String       @db.Text
+  description String
   weight      Float        @default(0)
   visible     Boolean
   PlayerItem  PlayerItem[]
@@ -132,10 +133,10 @@ model ExtraInfo {
 model Spell {
   id          Int           @id @default(autoincrement())
   name        String
-  description String        @db.Text
-  cost        String
-  type        String
-  damage      String
+  description String
+  cost String
+  type String
+  damage String
   target      String
   castingTime String
   range       String
@@ -225,7 +226,7 @@ model PlayerItem {
   player_id          Int
   Item               Item   @relation(fields: [item_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
   item_id            Int
-  currentDescription String @db.Text
+  currentDescription String
   quantity           Int
 
   @@id([player_id, item_id])
@@ -246,7 +247,7 @@ model PlayerExtraInfo {
   player_id     Int
   ExtraInfo     ExtraInfo @relation(fields: [extra_info_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
   extra_info_id Int
-  value         String    @db.Text
+  value String
 
   @@id([player_id, extra_info_id])
 }
@@ -263,7 +264,7 @@ model PlayerSpell {
 model PlayerNote {
   Player    Player @relation(fields: [player_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
   player_id Int
-  value     String @db.Text
+  value String
 
   @@id([player_id])
 }
@@ -274,7 +275,7 @@ model PlayerAvatar {
   player_id           Int
   AttributeStatus     AttributeStatus? @relation(fields: [attribute_status_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
   attribute_status_id Int?
-  link                String?          @db.Text
+  link String?
 
   @@unique([player_id, attribute_status_id])
 }
@@ -282,7 +283,7 @@ model PlayerAvatar {
 model Config {
   id    Int    @id @default(autoincrement())
   name  String @unique
-  value String @db.LongText
+  value String
 }
 
 model Trade {

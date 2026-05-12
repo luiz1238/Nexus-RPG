@@ -16,8 +16,8 @@ import PlayerItemContainer from '../../../../components/Player/PlayerItemContain
 import PlayerSkillContainer from '../../../../components/Player/PlayerSkillContainer';
 import PlayerSpecField from '../../../../components/Player/PlayerSpecField';
 import PlayerSpellContainer from '../../../../components/Player/PlayerSpellContainer';
-import { ErrorLogger, Socket } from '../../../../contexts';
-import useSocket from '../../../../hooks/useSocket';
+import { ErrorLogger, Realtime } from '../../../../contexts';
+import useRealtime from '../../../../hooks/useRealtime';
 import useToast from '../../../../hooks/useToast';
 import type { InferSSRProps } from '../../../../utils';
 import api from '../../../../utils/api';
@@ -37,18 +37,18 @@ export default function Page(props: PageProps) {
 }
 
 function PlayerSheet(props: PageProps) {
-	const [toasts, addToast] = useToast();
-	const socket = useSocket(`player${props.player.id}`);
+  const [toasts, addToast] = useToast();
+  const { on, ready } = useRealtime();
 
-	useEffect(() => {
-		if (!socket) return;
-		socket.on('playerDelete', () => api.delete('/player').then(() => Router.push('/')));
-		return () => {
-			socket.off('playerDelete');
-		};
-	}, [socket]);
+  useEffect(() => {
+    on('playerDelete', (payload) => {
+      if (payload.playerId === props.player.id) {
+        api.delete('/player').then(() => Router.push('/'));
+      }
+    });
+  }, [on, props.player.id]);
 
-	if (!socket)
+  if (!ready)
 		return (
 			<Container className='text-center'>
 				<Row className='align-items-center' style={{ height: '90vh' }}>
@@ -76,7 +76,7 @@ function PlayerSheet(props: PageProps) {
 	return (
 		<>
 			<ErrorLogger.Provider value={addToast}>
-				<Socket.Provider value={socket}>
+				<Realtime.Provider value={null}>
 					<Container>
 						<Row className='display-5 text-center'>
 							<Col>Ficha do Personagem</Col>
@@ -163,7 +163,7 @@ function PlayerSheet(props: PageProps) {
 							/>
 						</Row>
 					</Container>
-				</Socket.Provider>
+				</Realtime.Provider>
 			</ErrorLogger.Provider>
 			<ErrorToastContainer toasts={toasts} />
 		</>

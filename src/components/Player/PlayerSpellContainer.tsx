@@ -4,14 +4,10 @@ import Button from 'react-bootstrap/Button';
 import Col from 'react-bootstrap/Col';
 import Row from 'react-bootstrap/Row';
 import Image from 'react-bootstrap/Image';
-import { ErrorLogger, Socket } from '../../contexts';
+import { ErrorLogger } from '../../contexts';
 import useExtendedState from '../../hooks/useExtendedState';
+import useRealtime from '../../hooks/useRealtime';
 import api from '../../utils/api';
-import type {
-	SpellAddEvent,
-	SpellChangeEvent,
-	SpellRemoveEvent,
-} from '../../utils/socket';
 import BottomTextInput from '../BottomTextInput';
 import CustomSpinner from '../CustomSpinner';
 import DataContainer from '../DataContainer';
@@ -46,13 +42,13 @@ export default function PlayerSpellContainer(props: PlayerSpellContainerProps) {
 	const [spellEditorData, setSpellEditorData] = useState<Spell | undefined>(undefined);
 	const [spellEditorOperation, setSpellEditorOperation] = useState<'create' | 'edit'>('create');
 
-	const logError = useContext(ErrorLogger);
-	const socket = useContext(Socket);
-	const[diceRoll, rollDice] = useDiceRoll(props.npcId);
+  const logError = useContext(ErrorLogger);
+  const { on } = useRealtime();
+  const [diceRoll, rollDice] = useDiceRoll(props.npcId);
 
-	const socket_spellAdd = useRef<SpellAddEvent>(() => {});
-	const socket_spellRemove = useRef<SpellRemoveEvent>(() => {});
-	const socket_spellChange = useRef<SpellChangeEvent>(() => {});
+  const socket_spellAdd = useRef<(id: number, name: string) => void>(() => {});
+  const socket_spellRemove = useRef<(id: number) => void>(() => {});
+  const socket_spellChange = useRef<(sp: Spell) => void>(() => {});
 
 	useEffect(() => {
 		socket_spellAdd.current = (id, name) => {
@@ -104,16 +100,11 @@ export default function PlayerSpellContainer(props: PlayerSpellContainerProps) {
 		};
 	});
 
-	useEffect(() => {
-		socket.on('spellAdd', (id, name) => socket_spellAdd.current(id, name));
-		socket.on('spellRemove', (id) => socket_spellRemove.current(id));
-		socket.on('spellChange', (spell) => socket_spellChange.current(spell));
-		return () => {
-			socket.off('spellAdd');
-			socket.off('spellRemove');
-			socket.off('spellChange');
-		};
-	});
+  useEffect(() => {
+    on('spellAdd', (payload) => socket_spellAdd.current(payload.id, payload.name));
+    on('spellRemove', (payload) => socket_spellRemove.current(payload.id));
+    on('spellChange', (payload) => socket_spellChange.current(payload.spell));
+  }, [on]);
 
 	// Lógica de Criar Magia Customizada
 	function onSpellCreateSubmit(spell: Spell) {

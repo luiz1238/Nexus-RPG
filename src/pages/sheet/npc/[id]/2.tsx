@@ -12,7 +12,7 @@ import DataContainer from '../../../../components/DataContainer';
 import ErrorToastContainer from '../../../../components/ErrorToastContainer';
 import PlayerAnnotationsField from '../../../../components/Player/PlayerAnnotationField';
 import PlayerExtraInfoField from '../../../../components/Player/PlayerExtraInfoField';
-import useSocket from '../../../../hooks/useSocket';
+import useRealtime from '../../../../hooks/useRealtime';
 import useToast from '../../../../hooks/useToast';
 import type { InferSSRProps } from '../../../../utils';
 import api from '../../../../utils/api';
@@ -31,18 +31,18 @@ export default function Page(props: PageProps) {
 }
 
 function PlayerSheet(props: PageProps) {
-	const [toasts, addToast] = useToast();
-	const socket = useSocket(`player${props.player.id}`);
+  const [toasts, addToast] = useToast();
+  const { on, ready } = useRealtime();
 
-	useEffect(() => {
-		if (!socket) return;
-		socket.on('playerDelete', () => api.delete('/player').then(() => Router.push('/')));
-		return () => {
-			socket.off('playerDelete');
-		};
-	}, [socket]);
+  useEffect(() => {
+    on('playerDelete', (payload) => {
+      if (payload.playerId === props.player.id) {
+        api.delete('/player').then(() => Router.push('/'));
+      }
+    });
+  }, [on, props.player.id]);
 
-	if (!socket)
+  if (!ready)
 		return (
 			<Container className='text-center'>
 				<Row className='align-items-center' style={{ height: '90vh' }}>

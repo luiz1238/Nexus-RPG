@@ -9,16 +9,10 @@ import Row from 'react-bootstrap/Row';
 import Table from 'react-bootstrap/Table';
 import { BsTrash } from 'react-icons/bs';
 import { FaHandHolding, FaHandsHelping } from 'react-icons/fa';
-import { ErrorLogger, Socket } from '../../contexts';
+import { ErrorLogger } from '../../contexts';
 import useExtendedState from '../../hooks/useExtendedState';
+import useRealtime from '../../hooks/useRealtime';
 import api from '../../utils/api';
-import type {
-	ItemAddEvent,
-	ItemChangeEvent,
-	ItemRemoveEvent,
-	PlayerTradeRequestEvent,
-	PlayerTradeResponseEvent,
-} from '../../utils/socket';
 import BottomTextInput from '../BottomTextInput';
 import CustomSpinner from '../CustomSpinner';
 import DataContainer from '../DataContainer';
@@ -76,14 +70,14 @@ export default function PlayerItemContainer(props: PlayerItemContainerProps) {
 	const[itemEditorData, setItemEditorData] = useState<Item | undefined>(undefined);
 	const[itemEditorOperation, setItemEditorOperation] = useState<'create' | 'edit'>('create');
 
-	const logError = useContext(ErrorLogger);
-	const socket = useContext(Socket);
+  const logError = useContext(ErrorLogger);
+  const { on } = useRealtime();
 
-	const socket_itemAdd = useRef<ItemAddEvent>(() => {});
-	const socket_itemRemove = useRef<ItemRemoveEvent>(() => {});
-	const socket_itemChange = useRef<ItemChangeEvent>(() => {});
-	const socket_requestReceived = useRef<PlayerTradeRequestEvent>(() => {});
-	const socket_responseReceived = useRef<PlayerTradeResponseEvent>(() => {});
+  const socket_itemAdd = useRef<(id: number, name: string) => void>(() => {});
+  const socket_itemRemove = useRef<(id: number) => void>(() => {});
+  const socket_itemChange = useRef<(it: Item) => void>(() => {});
+  const socket_requestReceived = useRef<(type: string, tradeId: number, receiverObjectId: number | null, senderName: string, itemName: string) => void>(() => {});
+  const socket_responseReceived = useRef<(accept: boolean, tradeRes?: any) => void>(() => {});
 
 	useEffect(() => {
 		socket_itemAdd.current = (id, name) => {
@@ -225,33 +219,23 @@ export default function PlayerItemContainer(props: PlayerItemContainerProps) {
 		};
 	});
 
-	useEffect(() => {
-		socket.on('itemAdd', (id, name) => socket_itemAdd.current(id, name));
-		socket.on('itemRemove', (id) => socket_itemRemove.current(id));
-		socket.on('itemChange', (item) => socket_itemChange.current(item));
-		socket.on(
-			'playerTradeRequest',
-			(type, tradeId, receiverObjectId, senderName, senderObjectName) =>
-				socket_requestReceived.current(
-					type,
-					tradeId,
-					receiverObjectId,
-					senderName,
-					senderObjectName
-				)
-		);
-		socket.on('playerTradeResponse', (accept, item) =>
-			socket_responseReceived.current(accept, item)
-		);
-		return () => {
-			socket.off('itemAdd');
-			socket.off('itemRemove');
-			socket.off('itemChange');
-			socket.off('playerTradeRequest');
-			socket.off('playerTradeResponse');
-		};
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	},[]);
+  useEffect(() => {
+    on('itemAdd', (payload) => socket_itemAdd.current(payload.id, payload.name));
+    on('itemRemove', (payload) => socket_itemRemove.current(payload.id));
+    on('itemChange', (payload) => socket_itemChange.current(payload.item));
+    on('playerTradeRequest', (payload) =>
+      socket_requestReceived.current(
+        payload.type,
+        payload.tradeId,
+        payload.receiverObjectId,
+        payload.senderName,
+        payload.senderObjectName
+      )
+    );
+    on('playerTradeResponse', (payload) =>
+      socket_responseReceived.current(payload.accept, payload.object)
+    );
+  }, [on]);
 
 	// Lógica para criar Item Customizado direto da ficha
 	function onItemCreateSubmit(item: Item) {

@@ -31,9 +31,9 @@ export default function Page({ init, error }: InferSSRProps<typeof getSSP>) {
 					</Row>
 					<Row>
 						<Col className='h3 mt-2'>
-							Certifique-se de ter integrado um banco de dados ao aplicativo, criado a
-							variável de ambiente <b>CLEARDB_DATABASE_URL</b> e preenchido seu valor
-							corretamente.
+          Certifique-se de ter integrado um banco de dados ao aplicativo, criado a
+          variável de ambiente <b>DATABASE_URL</b> e preenchido seu valor
+          corretamente.
 						</Col>
 					</Row>
 				</Container>

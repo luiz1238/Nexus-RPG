@@ -1,45 +1,45 @@
-import type { NextApiRequest } from 'next';
+import type { NextApiRequest, NextApiResponse } from 'next';
 import prisma from '../../../../../utils/database';
 import { sessionAPI } from '../../../../../utils/session';
-import type { NextApiResponseServerIO } from '../../../../../utils/socket';
+import { broadcast } from '../../../../../utils/broadcast';
 
-async function handler(req: NextApiRequest, res: NextApiResponseServerIO) {
-	if (req.method !== 'POST') {
-		res.status(401).end();
-		return;
-	}
-	
-	const player = req.session.player;
-	const npcId: number | undefined = req.body.npcId;
+async function handler(req: NextApiRequest, res: NextApiResponse) {
+  if (req.method !== 'POST') {
+    res.status(401).end();
+    return;
+  }
 
-	if (!player || (player.admin && !npcId)) {
-		res.status(401).end();
-		return;
-	}
+  const player = req.session.player;
+  const npcId: number | undefined = req.body.npcId;
 
-	const statusID: number | undefined = parseInt(req.body.attrStatusID);
-	const value: boolean | undefined = req.body.value;
-	
-	if (!statusID || value === undefined) {
-		res.status(401).send({ message: 'ID ou valor do status está em branco.' });
-		return;
-	}
+  if (!player || (player.admin && !npcId)) {
+    res.status(401).end();
+    return;
+  }
 
-	const playerId = npcId ? npcId : player.id;
+  const statusID: number | undefined = parseInt(req.body.attrStatusID);
+  const value: boolean | undefined = req.body.value;
 
-	await prisma.playerAttributeStatus.update({
-		where: {
-			player_id_attribute_status_id: {
-				player_id: playerId,
-				attribute_status_id: statusID,
-			},
-		},
-		data: { value },
-	});
+  if (!statusID || value === undefined) {
+    res.status(401).send({ message: 'ID ou valor do status está em branco.' });
+    return;
+  }
 
-	res.end();
+  const playerId = npcId ? npcId : player.id;
 
-	res.socket.server.io?.emit('playerAttributeStatusChange', playerId, statusID, value);
+  await prisma.playerAttributeStatus.update({
+    where: {
+      player_id_attribute_status_id: {
+        player_id: playerId,
+        attribute_status_id: statusID,
+      },
+    },
+    data: { value },
+  });
+
+  res.end();
+
+  broadcast('playerAttributeStatusChange', { playerId, attStatusId: statusID, value });
 }
 
 export default sessionAPI(handler);

@@ -1,7 +1,8 @@
 import { useContext, useEffect, useRef, useState } from 'react';
 import Col from 'react-bootstrap/Col';
 import Row from 'react-bootstrap/Row';
-import { ErrorLogger, Socket } from '../../contexts';
+import { ErrorLogger } from '../../contexts';
+import useRealtime from '../../hooks/useRealtime';
 import api from '../../utils/api';
 import DataContainer from '../DataContainer';
 import GeneralDiceRollModal from '../Modals/GeneralDiceRollModal';
@@ -21,25 +22,20 @@ export default function AdminUtilityContainer(props: AdminUtilityContainerProps)
 	const [complexNpcs, setComplexNpcs] = useState(
 		props.npcs.map((n) => ({ ...n, npc: true }))
 	);
-	const componentDidMount = useRef(false);
-	const socket = useContext(Socket);
-	const logError = useContext(ErrorLogger);
+  const componentDidMount = useRef(false);
+  const { on } = useRealtime();
+  const logError = useContext(ErrorLogger);
 
-	useEffect(() => {
-		setBasicNpcs(JSON.parse(localStorage.getItem('admin_npcs') || '[]') as NPC[]);
+  useEffect(() => {
+    setBasicNpcs(JSON.parse(localStorage.getItem('admin_npcs') || '[]') as NPC[]);
 
-		socket.on('playerNameChange', (playerId, value) => {
-			const npc = complexNpcs.find((npc) => npc.id === playerId);
-			if (!npc) return;
-			npc.name = value;
-			setComplexNpcs([...complexNpcs]);
-		});
-
-		return () => {
-			socket.off('playerNameChange');
-		};
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, []);
+    on('playerNameChange', (payload) => {
+      const npc = complexNpcs.find((npc) => npc.id === payload.playerId);
+      if (!npc) return;
+      npc.name = payload.value;
+      setComplexNpcs([...complexNpcs]);
+    });
+  }, [on]);
 
 	useEffect(() => {
 		if (componentDidMount.current) {

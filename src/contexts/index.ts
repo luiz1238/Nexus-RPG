@@ -1,5 +1,5 @@
 import { createContext } from 'react';
-import type { SocketIO } from '../hooks/useSocket';
+import type { RealtimeChannel } from '@supabase/supabase-js';
 
 export const ErrorLogger = createContext<(err: any) => void>(() => {});
-export const Socket = createContext<SocketIO>(undefined as any);
+export const Realtime = createContext<RealtimeChannel | null>(null);

@@ -1,15 +1,14 @@
-import type { NextApiRequest } from 'next';
+import type { NextApiRequest, NextApiResponse } from 'next';
 import prisma from '../../utils/database';
 import { hash } from '../../utils/encryption';
 import { sessionAPI } from '../../utils/session';
-import type { NextApiResponseServerIO } from '../../utils/socket';
 
-function handler(req: NextApiRequest, res: NextApiResponseServerIO) {
-	if (req.method === 'POST') return handlePost(req, res);
-	res.status(404).end();
+function handler(req: NextApiRequest, res: NextApiResponse) {
+  if (req.method === 'POST') return handlePost(req, res);
+  res.status(404).end();
 }
 
-async function handlePost(req: NextApiRequest, res: NextApiResponseServerIO) {
+async function handlePost(req: NextApiRequest, res: NextApiResponse) {
 	const username: string | undefined = req.body.username;
 	const plainPassword: string | undefined = req.body.password;
 	const adminKey: string | undefined = req.body.adminKey;

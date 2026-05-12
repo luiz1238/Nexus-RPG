@@ -1,38 +1,32 @@
 import type { IronSessionOptions } from 'iron-session';
 import { withIronSessionApiRoute, withIronSessionSsr } from 'iron-session/next';
-import type { GetServerSidePropsContext, NextApiHandler, NextApiRequest } from 'next';
-import type { NextApiResponseServerIO } from './socket';
+import type { GetServerSidePropsContext, NextApiHandler, NextApiRequest, NextApiResponse } from 'next';
 
 export const cookieName = 'openrpg_session';
 
 declare module 'iron-session' {
-	interface IronSessionData {
-		player?: {
-			id: number;
-			admin: boolean;
-		};
-	}
+  interface IronSessionData {
+    player?: {
+      id: number;
+      admin: boolean;
+    };
+  }
 }
 
 const sessionOptions: IronSessionOptions = {
-	cookieName,
-	password: process.env.SESSION_SECRET as string,
-	cookieOptions: {
-		secure: false,
-	},
+  cookieName,
+  password: process.env.SESSION_SECRET as string,
+  cookieOptions: {
+    secure: false,
+  },
 };
 
-type NextApiServerIOHandler<T = any> = (
-	req: NextApiRequest,
-	res: NextApiResponseServerIO<T>
-) => void | Promise<void>;
-
-export function sessionAPI(handler: NextApiHandler | NextApiServerIOHandler) {
-	return withIronSessionApiRoute(handler as NextApiHandler, sessionOptions);
+export function sessionAPI(handler: NextApiHandler) {
+  return withIronSessionApiRoute(handler, sessionOptions);
 }
 
 export function sessionSSR(
-	handler: (context: GetServerSidePropsContext) => Promise<any>
+  handler: (context: GetServerSidePropsContext) => Promise<any>
 ) {
-	return withIronSessionSsr(handler, sessionOptions);
+  return withIronSessionSsr(handler, sessionOptions);
 }

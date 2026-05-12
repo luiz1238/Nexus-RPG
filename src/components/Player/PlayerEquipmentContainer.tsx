@@ -8,19 +8,13 @@ import Row from 'react-bootstrap/Row';
 import Table from 'react-bootstrap/Table';
 import { BsTrash } from 'react-icons/bs';
 import { FaHandHolding, FaHandsHelping } from 'react-icons/fa';
-import { ErrorLogger, Socket } from '../../contexts';
+import { ErrorLogger } from '../../contexts';
 import type { DiceRollEvent } from '../../hooks/useDiceRoll';
 import useDiceRoll from '../../hooks/useDiceRoll';
 import useExtendedState from '../../hooks/useExtendedState';
+import useRealtime from '../../hooks/useRealtime';
 import api from '../../utils/api';
 import { resolveDices } from '../../utils/dice';
-import {
-	EquipmentAddEvent,
-	EquipmentChangeEvent,
-	EquipmentRemoveEvent,
-	PlayerTradeRequestEvent,
-	PlayerTradeResponseEvent,
-} from '../../utils/socket';
 import BottomTextInput from '../BottomTextInput';
 import CustomSpinner from '../CustomSpinner';
 import DataContainer from '../DataContainer';
@@ -71,14 +65,14 @@ export default function PlayerEquipmentContainer(props: PlayerEquipmentContainer
 	const [equipEditorData, setEquipEditorData] = useState<Equipment | undefined>(undefined);
 	const [equipEditorOperation, setEquipEditorOperation] = useState<'create' | 'edit'>('create');
 
-	const socket = useContext(Socket);
-	const logError = useContext(ErrorLogger);
+  const { on } = useRealtime();
+  const logError = useContext(ErrorLogger);
 
-	const socket_equipmentAdd = useRef<EquipmentAddEvent>(() => {});
-	const socket_equipmentRemove = useRef<EquipmentRemoveEvent>(() => {});
-	const socket_equipmentChange = useRef<EquipmentChangeEvent>(() => {});
-	const socket_requestReceived = useRef<PlayerTradeRequestEvent>(() => {});
-	const socket_responseReceived = useRef<PlayerTradeResponseEvent>(() => {});
+  const socket_equipmentAdd = useRef<(id: number, name: string) => void>(() => {});
+  const socket_equipmentRemove = useRef<(id: number) => void>(() => {});
+  const socket_equipmentChange = useRef<(eq: Equipment) => void>(() => {});
+  const socket_requestReceived = useRef<(type: string, tradeId: number, receiverObjectId: number | null, senderName: string, equipmentName: string) => void>(() => {});
+  const socket_responseReceived = useRef<(accept: boolean, tradeRes?: any) => void>(() => {});
 
 	useEffect(() => {
 		socket_equipmentAdd.current = (id, name) => {
@@ -228,33 +222,23 @@ export default function PlayerEquipmentContainer(props: PlayerEquipmentContainer
 		};
 	});
 
-	useEffect(() => {
-		socket.on('equipmentAdd', (id, name) => socket_equipmentAdd.current(id, name));
-		socket.on('equipmentRemove', (id) => socket_equipmentRemove.current(id));
-		socket.on('equipmentChange', (eq) => socket_equipmentChange.current(eq));
-		socket.on(
-			'playerTradeRequest',
-			(type, tradeId, receiverObjectId, senderName, senderObjectName) =>
-				socket_requestReceived.current(
-					type,
-					tradeId,
-					receiverObjectId,
-					senderName,
-					senderObjectName
-				)
-		);
-		socket.on('playerTradeResponse', (accept, eq) =>
-			socket_responseReceived.current(accept, eq)
-		);
-		return () => {
-			socket.off('equipmentAdd');
-			socket.off('equipmentRemove');
-			socket.off('equipmentChange');
-			socket.off('playerTradeRequest');
-			socket.off('playerTradeResponse');
-		};
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	},[]);
+  useEffect(() => {
+    on('equipmentAdd', (payload) => socket_equipmentAdd.current(payload.id, payload.name));
+    on('equipmentRemove', (payload) => socket_equipmentRemove.current(payload.id));
+    on('equipmentChange', (payload) => socket_equipmentChange.current(payload.equipment));
+    on('playerTradeRequest', (payload) =>
+      socket_requestReceived.current(
+        payload.type,
+        payload.tradeId,
+        payload.receiverObjectId,
+        payload.senderName,
+        payload.senderObjectName
+      )
+    );
+    on('playerTradeResponse', (payload) =>
+      socket_responseReceived.current(payload.accept, payload.object)
+    );
+  }, [on]);
 
 	// Lógica de Criar Equipamento
 	function onEquipCreateSubmit(equip: Equipment) {

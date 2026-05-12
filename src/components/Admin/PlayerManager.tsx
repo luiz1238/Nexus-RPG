@@ -1,40 +1,22 @@
 import type {
-	Attribute,
-	AttributeStatus,
-	Characteristic,
-	Currency,
-	Equipment,
-	Info,
-	Skill,
-	Spec,
-	Spell,
+  Attribute,
+  AttributeStatus,
+  Characteristic,
+  Currency,
+  Equipment,
+  Info,
+  Skill,
+  Spec,
+  Spell,
 } from '@prisma/client';
 import { Reducer, useContext, useEffect, useReducer } from 'react';
 import Button from 'react-bootstrap/Button';
 import Col from 'react-bootstrap/Col';
 import Row from 'react-bootstrap/Row';
 import Table from 'react-bootstrap/Table';
-import { ErrorLogger, Socket } from '../../contexts';
+import { ErrorLogger } from '../../contexts';
+import useRealtime from '../../hooks/useRealtime';
 import api from '../../utils/api';
-import type {
-	PlayerAttributeChangeEvent,
-	PlayerAttributeStatusChangeEvent,
-	PlayerCharacteristicChangeEvent,
-	PlayerCurrencyChangeEvent,
-	PlayerEquipmentAddEvent,
-	PlayerEquipmentRemoveEvent,
-	PlayerInfoChangeEvent,
-	PlayerItemAddEvent,
-	PlayerItemChangeEvent,
-	PlayerItemRemoveEvent,
-	PlayerMaxLoadChangeEvent,
-	PlayerNameChangeEvent,
-	PlayerSkillChangeEvent,
-	PlayerSpecChangeEvent,
-	PlayerSpellAddEvent,
-	PlayerSpellRemoveEvent,
-	PlayerSpellSlotsChangeEvent,
-} from '../../utils/socket';
 import AvatarField from './AvatarField';
 import PlayerPortraitButton from './PlayerPortraitButton';
 
@@ -249,9 +231,9 @@ type PlayerManagerProps = {
 };
 
 export default function PlayerManager(props: PlayerManagerProps) {
-	const [players, dispatch] = useReducer(PlayerManagerReducer, props.players);
-	const socket = useContext(Socket);
-	const logError = useContext(ErrorLogger);
+  const [players, dispatch] = useReducer(PlayerManagerReducer, props.players);
+  const { on } = useRealtime();
+  const logError = useContext(ErrorLogger);
 
 	function onDeletePlayer(id: number) {
 		if (!confirm('Tem certeza que deseja apagar esse jogador?')) return;
@@ -261,80 +243,59 @@ export default function PlayerManager(props: PlayerManagerProps) {
 			.catch(logError);
 	}
 
-	useEffect(() => {
-		socket.on('playerAttributeStatusChange', (playerId, id, value) =>
-			dispatch({ type: 'updateAttributeStatus', data: [playerId, id, value] })
-		);
-		socket.on('playerNameChange', (playerId, value) =>
-			dispatch({ type: 'updateName', data: [playerId, value] })
-		);
-		socket.on('playerInfoChange', (playerId, infoId, value) =>
-			dispatch({ type: 'updateInfo', data:[playerId, infoId, value] })
-		);
-		socket.on('playerAttributeChange', (playerId, id, value, maxValue) =>
-			dispatch({ type: 'updateAttribute', data:[playerId, id, value, maxValue, false] })
-		);
-		socket.on('playerSpecChange', (playerId, id, value) =>
-			dispatch({ type: 'updateSpec', data: [playerId, id, value] })
-		);
-		socket.on('playerCurrencyChange', (playerId, id, value) =>
-			dispatch({ type: 'updateCurrency', data: [playerId, id, value] })
-		);
-		socket.on('playerCharacteristicChange', (playerId, id, value, modifier) =>
-			dispatch({ type: 'updateCharacteristic', data: [playerId, id, value, modifier] })
-		);
-		socket.on('playerSkillChange', (playerId, id, value, modifier) =>
-			dispatch({ type: 'updateSkill', data:[playerId, id, value, modifier] })
-		);
-		socket.on('playerEquipmentAdd', (playerId, equipment) =>
-			dispatch({ type: 'addEquipment', data: [playerId, equipment] })
-		);
-		socket.on('playerEquipmentRemove', (playerId, id) =>
-			dispatch({ type: 'removeEquipment', data: [playerId, id] })
-		);
-		socket.on('playerItemAdd', (playerId, item, description, quantity) =>
-			dispatch({ type: 'addItem', data:[playerId, item, description, quantity] })
-		);
-		socket.on('playerItemRemove', (playerId, id) =>
-			dispatch({ type: 'removeItem', data: [playerId, id] })
-		);
-		socket.on('playerItemChange', (playerId, id, description, quantity) =>
-			dispatch({ type: 'updateItem', data: [playerId, id, description, quantity] })
-		);
-		socket.on('playerSpellAdd', (playerId, spell) =>
-			dispatch({ type: 'addSpell', data:[playerId, spell] })
-		);
-		socket.on('playerSpellRemove', (playerId, id) =>
-			dispatch({ type: 'removeSpell', data: [playerId, id] })
-		);
-		socket.on('playerMaxLoadChange', (playerId, value) =>
-			dispatch({ type: 'updateMaxLoad', data: [playerId, value] })
-		);
-		socket.on('playerSpellSlotsChange', (playerId, value) =>
-			dispatch({ type: 'updateSpellSlots', data: [playerId, value] })
-		);
-
-		return () => {
-			socket.off('playerAttributeStatusChange');
-			socket.off('playerNameChange');
-			socket.off('playerInfoChange');
-			socket.off('playerAttributeChange');
-			socket.off('playerSpecChange');
-			socket.off('playerCurrencyChange');
-			socket.off('playerCharacteristicChange');
-			socket.off('playerSkillChange');
-			socket.off('playerEquipmentAdd');
-			socket.off('playerEquipmentRemove');
-			socket.off('playerItemAdd');
-			socket.off('playerItemRemove');
-			socket.off('playerItemChange');
-			socket.off('playerSpellAdd');
-			socket.off('playerSpellRemove');
-			socket.off('playerMaxLoadChange');
-			socket.off('playerSpellSlotsChange');
-		};
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	},[]);
+  useEffect(() => {
+    on('playerAttributeStatusChange', (p) =>
+      dispatch({ type: 'updateAttributeStatus', data: [p.playerId, p.attStatusId, p.value] })
+    );
+    on('playerNameChange', (p) =>
+      dispatch({ type: 'updateName', data: [p.playerId, p.value] })
+    );
+    on('playerInfoChange', (p) =>
+      dispatch({ type: 'updateInfo', data: [p.playerId, p.infoId, p.value] })
+    );
+    on('playerAttributeChange', (p) =>
+      dispatch({ type: 'updateAttribute', data: [p.playerId, p.attributeId, p.value, p.maxValue, false] })
+    );
+    on('playerSpecChange', (p) =>
+      dispatch({ type: 'updateSpec', data: [p.playerId, p.specId, p.value] })
+    );
+    on('playerCurrencyChange', (p) =>
+      dispatch({ type: 'updateCurrency', data: [p.playerId, p.currencyId, p.value] })
+    );
+    on('playerCharacteristicChange', (p) =>
+      dispatch({ type: 'updateCharacteristic', data: [p.playerId, p.characteristicId, p.value, p.modifier] })
+    );
+    on('playerSkillChange', (p) =>
+      dispatch({ type: 'updateSkill', data: [p.playerId, p.skillId, p.value, p.modifier] })
+    );
+    on('playerEquipmentAdd', (p) =>
+      dispatch({ type: 'addEquipment', data: [p.playerId, p.equipment] })
+    );
+    on('playerEquipmentRemove', (p) =>
+      dispatch({ type: 'removeEquipment', data: [p.playerId, p.id] })
+    );
+    on('playerItemAdd', (p) =>
+      dispatch({ type: 'addItem', data: [p.playerId, p.item, p.currentDescription, p.quantity] })
+    );
+    on('playerItemRemove', (p) =>
+      dispatch({ type: 'removeItem', data: [p.playerId, p.id] })
+    );
+    on('playerItemChange', (p) =>
+      dispatch({ type: 'updateItem', data: [p.playerId, p.itemID, p.currentDescription, p.quantity] })
+    );
+    on('playerSpellAdd', (p) =>
+      dispatch({ type: 'addSpell', data: [p.playerId, p.spell] })
+    );
+    on('playerSpellRemove', (p) =>
+      dispatch({ type: 'removeSpell', data: [p.playerId, p.spellId] })
+    );
+    on('playerMaxLoadChange', (p) =>
+      dispatch({ type: 'updateMaxLoad', data: [p.playerId, p.newLoad] })
+    );
+    on('playerSpellSlotsChange', (p) =>
+      dispatch({ type: 'updateSpellSlots', data: [p.playerId, p.newSpellSlots] })
+    );
+  }, [on]);
 
 	if (players.length === 0)
 		return (

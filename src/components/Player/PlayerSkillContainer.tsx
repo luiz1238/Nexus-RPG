@@ -3,17 +3,13 @@ import Button from 'react-bootstrap/Button';
 import Col from 'react-bootstrap/Col';
 import FormControl from 'react-bootstrap/FormControl';
 import Row from 'react-bootstrap/Row';
-import { ErrorLogger, Socket } from '../../contexts';
+import { ErrorLogger } from '../../contexts';
 import type { DiceRollEvent } from '../../hooks/useDiceRoll';
 import useDiceRoll from '../../hooks/useDiceRoll';
 import useExtendedState from '../../hooks/useExtendedState';
+import useRealtime from '../../hooks/useRealtime';
 import api from '../../utils/api';
 import type { DiceConfigCell } from '../../utils/config';
-import type {
-	SkillAddEvent,
-	SkillChangeEvent,
-	SkillRemoveEvent,
-} from '../../utils/socket';
 import BottomTextInput from '../BottomTextInput';
 import DataContainer from '../DataContainer';
 import AddDataModal from '../Modals/AddDataModal';
@@ -55,12 +51,12 @@ export default function PlayerSkillContainer(props: PlayerSkillContainerProps) {
 	const [search, setSearch] = useState('');
 	const [notify, setNotify] = useState(false);
 
-	const socket = useContext(Socket);
-	const logError = useContext(ErrorLogger);
+  const { on } = useRealtime();
+  const logError = useContext(ErrorLogger);
 
-	const socket_skillAdd = useRef<SkillAddEvent>(() => {});
-	const socket_skillRemove = useRef<SkillRemoveEvent>(() => {});
-	const socket_skillChange = useRef<SkillChangeEvent>(() => {});
+  const socket_skillAdd = useRef<(id: number, name: string, specializationName: string | null) => void>(() => {});
+  const socket_skillRemove = useRef<(id: number) => void>(() => {});
+  const socket_skillChange = useRef<(id: number, name: string, specializationName: string | null) => void>(() => {});
 
 	useEffect(() => {
 		socket_skillAdd.current = (id, name, specializationName) => {
@@ -131,21 +127,15 @@ export default function PlayerSkillContainer(props: PlayerSkillContainerProps) {
 		};
 	});
 
-	useEffect(() => {
-		socket.on('skillAdd', (id, name, specializationName) =>
-			socket_skillAdd.current(id, name, specializationName)
-		);
-		socket.on('skillRemove', (id) => socket_skillRemove.current(id));
-		socket.on('skillChange', (id, name, specializationName) =>
-			socket_skillChange.current(id, name, specializationName)
-		);
-		return () => {
-			socket.off('skillAdd');
-			socket.off('skillRemove');
-			socket.off('skillChange');
-		};
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, []);
+  useEffect(() => {
+    on('skillAdd', (payload) =>
+      socket_skillAdd.current(payload.id, payload.name, payload.specializationName)
+    );
+    on('skillRemove', (payload) => socket_skillRemove.current(payload.id));
+    on('skillChange', (payload) =>
+      socket_skillChange.current(payload.id, payload.name, payload.specializationName)
+    );
+  }, [on]);
 
 	function onAddSkill(id: number) {
 		setLoading(true);
