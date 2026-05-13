@@ -58,9 +58,11 @@ function CharacterPortrait(props: PageProps) {
       <PortraitAvatarContainer
         playerId={props.playerId}
         attributeStatus={props.attributeStatus}
+        debug={debug}
       />
       <PortraitSideAttributeContainer
         sideAttribute={props.sideAttribute}
+        debug={debug}
       />
       <PortraitEnvironmentalContainer
         attributes={props.attributes}
@@ -77,6 +79,7 @@ function CharacterPortrait(props: PageProps) {
         showDice={showDice}
         onShowDice={() => setShowDice(true)}
         onHideDice={() => setShowDice(false)}
+        debug={debug}
       />
       <div className={styles.editor}>
         <Button

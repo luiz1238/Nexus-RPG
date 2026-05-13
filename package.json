@@ -27,6 +27,7 @@
     "next": "12.1.0",
     "pg": "^8.20.0",
     "prisma": "^5.0.0",
+    "re-resizable": "^6.11.2",
     "react": "17.0.2",
     "react-bootstrap": "^2.1.2",
     "react-dom": "17.0.2",

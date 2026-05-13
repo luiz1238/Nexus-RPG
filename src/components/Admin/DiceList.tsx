@@ -18,46 +18,54 @@ export default function DiceList(props: { players: { id: number; name: string }[
   useEffect(() => {
     setValues(JSON.parse(localStorage.getItem('admin_dice_history') || '[]') as Dice[]);
 
-    const unsub = on('diceResult', (payload) => {
-      const playerName =
-        props.players.find((p) => p.id === payload.playerId)?.name || 'Desconhecido';
+  const unsub = on('diceResult', (payload) => {
+    addDiceEntry(payload);
+  });
 
-      const isArray = Array.isArray(payload.dices);
+  const unsubAdmin = on('diceResultAdmin', (payload) => {
+    addDiceEntry(payload);
+  });
 
-      const dices = isArray
-        ? payload.dices.map((dice: { num: number; roll: number }) => {
-            const num = dice.num;
-            const roll = dice.roll;
-            return num > 0 ? `${num}d${roll}` : roll;
-          })
-        : payload.dices.num > 0
-        ? [`${payload.dices.num}d${payload.dices.roll}`]
-        : [payload.dices.roll];
+  function addDiceEntry(payload: { playerId: number; results: any[]; dices: any }) {
+    const playerName =
+      props.players.find((p) => p.id === payload.playerId)?.name || 'Desconhecido';
 
-      const results = payload.results.map((res: { roll: number; resultType?: { description: string } }) => {
-        const roll = res.roll;
-        const description = res.resultType?.description;
-        if (description) return `${roll} (${description})`;
-        return roll;
-      });
+    const isArray = Array.isArray(payload.dices);
 
-      const message = {
-        name: playerName,
-        dices: dices.join(', '),
-        results: results.join(', '),
-      };
+    const dices = isArray
+      ? payload.dices.map((dice: { num: number; roll: number }) => {
+          const num = dice.num;
+          const roll = dice.roll;
+          return num > 0 ? `${num}d${roll}` : roll;
+        })
+      : payload.dices.num > 0
+      ? [`${payload.dices.num}d${payload.dices.roll}`]
+      : [payload.dices.roll];
 
-      setValues((values) => {
-        if (values.length > 10) {
-          const newValues = [...values];
-          newValues.unshift(message);
-          newValues.splice(newValues.length - 1, 1);
-          return newValues;
-        }
-        return [message, ...values];
-      });
+    const results = payload.results.map((res: { roll: number; resultType?: { description: string } }) => {
+      const roll = res.roll;
+      const description = res.resultType?.description;
+      if (description) return `${roll} (${description})`;
+      return roll;
     });
-    return () => { unsub?.(); };
+
+    const message = {
+      name: playerName,
+      dices: dices.join(', '),
+      results: results.join(', '),
+    };
+
+    setValues((values) => {
+      if (values.length > 10) {
+        const newValues = [...values];
+        newValues.unshift(message);
+        newValues.splice(newValues.length - 1, 1);
+        return newValues;
+      }
+      return [message, ...values];
+    });
+  }
+    return () => { unsub?.(); unsubAdmin?.(); };
   }, [on]);
 
 	useEffect(() => {

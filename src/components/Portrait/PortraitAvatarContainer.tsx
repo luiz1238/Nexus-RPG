@@ -4,6 +4,7 @@ import Image from 'react-bootstrap/Image';
 import useRealtime from '../../hooks/useRealtime';
 import styles from '../../styles/modules/Portrait.module.scss';
 import api from '../../utils/api';
+import PortraitDraggableResizable from './PortraitDraggableResizable';
 
 export type PortraitAttributeStatus = {
   value: boolean;
@@ -28,6 +29,7 @@ function stripCacheBust(url: string): string {
 export default function PortraitAvatar(props: {
   attributeStatus: PortraitAttributeStatus;
   playerId: number;
+  debug?: boolean;
 }) {
   const [src, setSrc] = useState('#');
   const srcRef = useRef('#');
@@ -36,13 +38,7 @@ export default function PortraitAvatar(props: {
   const previousStatusID = useRef(Number.MAX_SAFE_INTEGER);
   const { on } = useRealtime();
 
-  const [diceColor, setDiceColor] = useState('');
-
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const color = params.get('dicecolor');
-    if (color) setDiceColor(color);
-
     const id = attributeStatus.find((stat) => stat.value)?.attribute_status_id || 0;
     previousStatusID.current = id;
     api
@@ -94,25 +90,25 @@ export default function PortraitAvatar(props: {
   }, [on, attributeStatus, props.playerId]);
 
   return (
-    <Fade in={showAvatar}>
-      <div
-        style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          width: '100%',
-          height: '100%',
-          filter: diceColor ? `drop-shadow(0 0 15px #${diceColor})` : 'none',
-        }}
-      >
-        <Image
-          src={src}
-          alt='Avatar'
-          onError={() => setSrc('/avatar404.png')}
-          onLoad={() => setShowAvatar(true)}
-          className={styles.avatar}
-        />
-      </div>
-    </Fade>
+    <PortraitDraggableResizable
+      storageKey="avatar"
+      defaultPosition={{ x: 0, y: 0 }}
+      defaultSize={{ width: 420, height: 600 }}
+      debug={props.debug}
+      zIndex={1}
+      lockAspectRatio
+    >
+      <Fade in={showAvatar}>
+        <div style={{ width: '100%', height: '100%' }}>
+          <Image
+            src={src}
+            alt='Avatar'
+            onError={() => setSrc('/avatar404.png')}
+            onLoad={() => setShowAvatar(true)}
+            className={styles.avatar}
+          />
+        </div>
+      </Fade>
+    </PortraitDraggableResizable>
   );
 }

@@ -78,7 +78,8 @@ export interface BroadcastPayloads {
   spellChange: { spell: Spell };
   environmentChange: { value: string };
   diceRoll: { playerId: number };
-  diceResult: { playerId: number; results: DiceResponse[]; dices: DiceRequest | DiceRequest[]; toAdmin?: boolean };
+  diceResult: { playerId: number; results: DiceResponse[]; dices: DiceRequest | DiceRequest[] };
+  diceResultAdmin: { playerId: number; results: DiceResponse[]; dices: DiceRequest | DiceRequest[] };
   playerTradeRequest: { type: TradeType; tradeId: number; receiverObjectId: number | null; senderName: string; senderObjectName: string };
   playerTradeResponse: { accept: boolean; object?: TradeObject };
 }

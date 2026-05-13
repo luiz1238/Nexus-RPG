@@ -1,19 +1,19 @@
-$avatar-width: 420px;
-$avatar-height: 600px;
-$dice-container-left: 30px;
+$portrait-width: 800px;
+$portrait-height: 800px;
 $glow-purple: rgba(138, 43, 226, 0.8);
 
 .portrait {
   position: relative;
-  width: $avatar-width;
-  height: $avatar-height;
-  overflow: visible;
+  width: $portrait-width;
+  height: $portrait-height;
+  overflow: hidden;
 }
 
 .editor {
   position: absolute;
-  top: 650px;
+  bottom: -50px;
   left: 10px;
+  z-index: 300;
 }
 
 .avatar {
@@ -23,11 +23,10 @@ $glow-purple: rgba(138, 43, 226, 0.8);
   filter: drop-shadow(0 0 10px rgba(138, 43, 226, 0.3));
 }
 
-.sideContainer {
-  position: absolute;
-  width: 200px;
-  height: 120px;
-  z-index: 100;
+.sideContainerInner {
+  position: relative;
+  width: 100%;
+  height: 100%;
 
   .sideBackground {
     filter: blur(10px);
@@ -46,16 +45,15 @@ $glow-purple: rgba(138, 43, 226, 0.8);
   }
 }
 
-.nameContainer {
-  position: absolute;
+.nameContainerInner {
   width: 100%;
-  z-index: 50;
+  height: 100%;
 
   .name {
     width: 6em;
     color: white;
     text-shadow: 4px 4px 0px rgba(0, 0, 0, 0.9), 0 0 25px $glow-purple;
-    font-size: 96px;
+    font-size: 48px;
     font-style: italic;
     text-transform: uppercase;
     line-height: 100%;
@@ -64,13 +62,11 @@ $glow-purple: rgba(138, 43, 226, 0.8);
   }
 }
 
-.combat {
-  position: absolute;
+.combatInner {
   width: 100%;
-  z-index: 50;
 
   .attribute {
-    font-size: 108px;
+    font-size: 48px;
     font-style: italic;
     max-width: 250px;
     color: white;
@@ -80,15 +76,14 @@ $glow-purple: rgba(138, 43, 226, 0.8);
   }
 }
 
-.diceContainer {
-  position: absolute;
-  top: 0;
-  left: $dice-container-left;
-  z-index: 200;
+.diceContainerInner {
+  position: relative;
+  width: 100%;
+  height: 100%;
 }
 
 .dice {
-  width: $avatar-width - $dice-container-left * 2;
+  width: 100%;
   filter: drop-shadow(0 0 15px rgba(138, 43, 226, 0.4));
 }
 
@@ -96,7 +91,7 @@ $glow-purple: rgba(138, 43, 226, 0.8);
   position: absolute;
   top: 49%;
   left: 50%;
-  font-size: 114px;
+  font-size: 64px;
   color: white;
   text-shadow: 3px 3px 0px black, 0 0 25px $glow-purple;
   transform: translate(-50%, -50%);
@@ -106,7 +101,7 @@ $glow-purple: rgba(138, 43, 226, 0.8);
   position: absolute;
   top: 99%;
   left: 50%;
-  font-size: 80px;
+  font-size: 40px;
   color: white;
   text-shadow: 2px 2px 0px black, 0 0 15px $glow-purple;
   transform: translate(-50%, -50%);

@@ -5,6 +5,7 @@ import styles from '../../styles/modules/Portrait.module.scss';
 import { sleep } from '../../utils';
 import type { DiceResponse } from '../../utils/dice';
 import { getAttributeStyle } from '../../utils/style';
+import PortraitDraggableResizable from './PortraitDraggableResizable';
 
 export default function PortraitDiceContainer(props: {
   playerId: number;
@@ -13,6 +14,7 @@ export default function PortraitDiceContainer(props: {
   onHideDice: () => void;
   color: string;
   showDiceRoll: boolean;
+  debug?: boolean;
 }) {
   const diceQueue = useRef<DiceResponse[]>([]);
   const diceData = useRef<DiceResponse>();
@@ -118,23 +120,32 @@ export default function PortraitDiceContainer(props: {
   }, [props.showDiceRoll]);
 
   return (
-    <div className={styles.diceContainer}>
-      <video
-        muted
-        className={`popout${props.showDice ? ' show' : ''} ${styles.dice}`}
-        ref={diceVideo}>
-        <source src='/dice_animation.webm' />
-      </video>
-      <Fade in={diceResult !== null}>
-        <div className={styles.result} ref={diceResultRef}>
-          {diceResult || lastDiceResult.current}
-        </div>
-      </Fade>
-      <Fade in={diceDescription !== null}>
-        <div className={styles.description} ref={diceDescriptionRef}>
-          {diceDescription || lastDiceDescription.current}
-        </div>
-      </Fade>
-    </div>
+    <PortraitDraggableResizable
+      storageKey="dice"
+      defaultPosition={{ x: 30, y: 500 }}
+      defaultSize={{ width: 360, height: 150 }}
+      debug={props.debug}
+      zIndex={200}
+    >
+      <div className={styles.diceContainerInner}>
+        <video
+          muted
+          className={`popout${props.showDice ? ' show' : ''} ${styles.dice}`}
+          ref={diceVideo}>
+          <source src='/dice_animation.webm' />
+
+          <Fade in={diceResult !== null}>
+            <div className={styles.result} ref={diceResultRef}>
+              {diceResult || lastDiceResult.current}
+            </div>
+          </Fade>
+          <Fade in={diceDescription !== null}>
+            <div className={styles.description} ref={diceDescriptionRef}>
+              {diceDescription || lastDiceDescription.current}
+            </div>
+          </Fade>
+        </video>
+      </div>
+    </PortraitDraggableResizable>
   );
 }

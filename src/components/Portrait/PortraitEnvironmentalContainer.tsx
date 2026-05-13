@@ -1,13 +1,12 @@
 import { Fragment, useEffect, useState } from 'react';
 import type { CSSProperties } from 'react';
 import Fade from 'react-bootstrap/Fade';
-import Draggable from 'react-draggable';
 import useRealtime from '../../hooks/useRealtime';
 import styles from '../../styles/modules/Portrait.module.scss';
-import { clamp } from '../../utils';
 import type { Environment } from '../../utils/config';
 import { getAttributeStyle } from '../../utils/style';
 import type { PortraitEnvironmentOrientation } from '../Modals/GetPortraitModal';
+import PortraitDraggableResizable from './PortraitDraggableResizable';
 
 type PortraitPlayerName = { name: string; show: boolean };
 
@@ -21,13 +20,6 @@ type PortraitAttributes = {
   maxValue: number;
   show: boolean;
 }[];
-
-const bounds = {
-  top: 0,
-  bottom: 450,
-  left: 0,
-  right: 0,
-};
 
 export default function PortraitEnvironmentalContainer(props: {
   environment: Environment;
@@ -81,12 +73,7 @@ function PortraitAttributesContainer(props: {
   debug: boolean;
 }) {
   const [attributes, setAttributes] = useState(props.attributes);
-  const [positionY, setPositionY] = useState(0);
   const { on } = useRealtime();
-
-  useEffect(() => {
-    setPositionY(Number(localStorage.getItem('attribute-pos-y') || 300));
-  }, []);
 
   useEffect(() => {
     const unsub = on('playerAttributeChange', (payload) => {
@@ -109,17 +96,15 @@ function PortraitAttributesContainer(props: {
   }, [on, props.playerId]);
 
   return (
-    <Draggable
-      axis='y'
-      position={{ x: 0, y: positionY }}
-      bounds={bounds}
-      onStop={(_ev, data) => {
-        const posY = clamp(data.y, bounds.top, bounds.bottom);
-        setPositionY(posY);
-        localStorage.setItem('attribute-pos-y', posY.toString());
-      }}>
+    <PortraitDraggableResizable
+      storageKey="attributes"
+      defaultPosition={{ x: 430, y: 200 }}
+      defaultSize={{ width: 150, height: 250 }}
+      debug={props.debug}
+      zIndex={50}
+    >
       <Fade in={props.debug || props.environment === 'combat'}>
-        <div className={styles.combat}>
+        <div className={styles.combatInner}>
           {attributes.map((attr) => (
             <Fragment key={attr.Attribute.id}>
               <span
@@ -132,7 +117,7 @@ function PortraitAttributesContainer(props: {
           ))}
         </div>
       </Fade>
-    </Draggable>
+    </PortraitDraggableResizable>
   );
 }
 
@@ -145,12 +130,7 @@ function PortraitNameContainer(props: {
   nameOrientation: PortraitEnvironmentOrientation;
 }) {
   const [playerName, setPlayerName] = useState(props.playerName);
-  const [positionY, setPositionY] = useState(0);
   const { on } = useRealtime();
-
-  useEffect(() => {
-    setPositionY(Number(localStorage.getItem('name-pos-y') || 300));
-  }, []);
 
   useEffect(() => {
     const unsub1 = on('playerNameChange', (payload) => {
@@ -166,21 +146,19 @@ function PortraitNameContainer(props: {
   }, [on, props.playerId]);
 
   const alignStyle: CSSProperties = props.nameOrientation === 'Direita'
-    ? { right: 0, textAlign: 'end' }
-    : { left: 0, textAlign: 'start' };
+    ? { textAlign: 'end' }
+    : { textAlign: 'start' };
 
   return (
-    <Draggable
-      axis='y'
-      position={{ x: 0, y: positionY }}
-      bounds={bounds}
-      onStop={(_ev, data) => {
-        const posY = clamp(data.y, bounds.top, bounds.bottom);
-        setPositionY(posY);
-        localStorage.setItem('name-pos-y', posY.toString());
-      }}>
+    <PortraitDraggableResizable
+      storageKey="name"
+      defaultPosition={{ x: 430, y: 480 }}
+      defaultSize={{ width: 150, height: 120 }}
+      debug={props.debug}
+      zIndex={50}
+    >
       <Fade in={props.debug || props.environment === 'idle'}>
-        <div className={styles.nameContainer} style={alignStyle}>
+        <div className={styles.nameContainerInner} style={alignStyle}>
           <label
             className={`${styles.name} nome`}
             style={{
@@ -196,6 +174,6 @@ function PortraitNameContainer(props: {
           </label>
         </div>
       </Fade>
-    </Draggable>
+    </PortraitDraggableResizable>
   );
 }

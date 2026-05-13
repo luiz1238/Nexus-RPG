@@ -119,7 +119,7 @@ async function handler(
 
   broadcast('diceResult', { playerId, results, dices });
   if (!player.admin) {
-    broadcast('diceResult', { playerId, results, dices, toAdmin: true });
+    broadcast('diceResultAdmin', { playerId, results, dices });
   }
 }
 
