@@ -25,11 +25,12 @@ export type DiceRollModalProps = DiceRoll & {
 };
 
 export default function DiceRollModal(props: DiceRollModalProps) {
-	const [dices, setDices] = useState(props.dices);
-	const[num, setNum] = useState(1);
-	const [diceRoll, setDiceRoll] = useState<DiceRollResult>({ dices: null });
-	const lastRoll = useRef<DiceRollResult>({ dices: null });
-	const diceRef = useRef<DiceRollResult | null>(null);
+  const [dices, setDices] = useState(props.dices);
+  const[num, setNum] = useState(1);
+  const [diceRoll, setDiceRoll] = useState<DiceRollResult>({ dices: null });
+  const lastRoll = useRef<DiceRollResult>({ dices: null });
+  const diceRef = useRef<DiceRollResult | null>(null);
+  const rollKeyRef = useRef(props._key || 0);
 
 	useEffect(() => {
 		if (props.dices === null) return;
@@ -130,7 +131,10 @@ export default function DiceRollModal(props: DiceRollModalProps) {
             setDiceRoll({ dices: null });
           }}
           onCloseModal={() => props.onHide()}
-          onRollAgain={() => setDiceRoll({ ...lastRoll.current, _key: (props._key || 0) + 1 })}
+          onRollAgain={() => {
+            rollKeyRef.current++;
+            setDiceRoll({ ...lastRoll.current, _key: rollKeyRef.current });
+          }}
         />
 		</>
 	);

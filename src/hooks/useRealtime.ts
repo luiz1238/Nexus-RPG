@@ -5,28 +5,54 @@ import type { BroadcastEventName, BroadcastPayloads } from '../utils/realtime';
 
 type EventCallback<T extends BroadcastEventName> = (payload: BroadcastPayloads[T]) => void;
 
-export default function useRealtime() {
-  const channelRef = useRef<RealtimeChannel | null>(null);
-  const [ready, setReady] = useState(false);
+let channelInstance: RealtimeChannel | null = null;
+let refCount = 0;
 
-  useEffect(() => {
-    const channel = supabaseClient.channel('nexus-rpg', {
+function getChannel(): RealtimeChannel {
+  if (!channelInstance) {
+    channelInstance = supabaseClient.channel('nexus-rpg', {
       config: {
         broadcast: { self: true },
       },
     });
+    channelInstance.subscribe();
+  }
+  refCount++;
+  return channelInstance;
+}
+
+function releaseChannel() {
+  refCount--;
+  if (refCount <= 0 && channelInstance) {
+    supabaseClient.removeChannel(channelInstance);
+    channelInstance = null;
+    refCount = 0;
+  }
+}
+
+export default function useRealtime() {
+  const channelRef = useRef<RealtimeChannel | null>(null);
+  const [ready, setReady] = useState(() => channelInstance?.state === 'joined');
+
+  useEffect(() => {
+    const channel = getChannel();
     channelRef.current = channel;
 
-    channel.subscribe((status) => {
-      if (status === 'SUBSCRIBED') {
+    if (channel.state === 'joined') {
+      setReady(true);
+    }
+
+    const unsubscribe = channel.on('system', {}, (payload: { type?: string }) => {
+      if (payload.type === 'joined') {
         setReady(true);
       }
-    });
+    }) as unknown as () => void;
 
     return () => {
-      supabaseClient.removeChannel(channel);
+      unsubscribe?.();
       channelRef.current = null;
       setReady(false);
+      releaseChannel();
     };
   }, []);
 
