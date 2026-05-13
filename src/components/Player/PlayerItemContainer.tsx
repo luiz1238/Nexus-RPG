@@ -220,10 +220,11 @@ export default function PlayerItemContainer(props: PlayerItemContainerProps) {
 	});
 
   useEffect(() => {
-    on('itemAdd', (payload) => socket_itemAdd.current(payload.id, payload.name));
-    on('itemRemove', (payload) => socket_itemRemove.current(payload.id));
-    on('itemChange', (payload) => socket_itemChange.current(payload.item));
-    on('playerTradeRequest', (payload) =>
+    const unsubs: (() => void)[] = [];
+    unsubs.push(on('itemAdd', (payload) => socket_itemAdd.current(payload.id, payload.name)));
+    unsubs.push(on('itemRemove', (payload) => socket_itemRemove.current(payload.id)));
+    unsubs.push(on('itemChange', (payload) => socket_itemChange.current(payload.item)));
+    unsubs.push(on('playerTradeRequest', (payload) =>
       socket_requestReceived.current(
         payload.type,
         payload.tradeId,
@@ -231,10 +232,11 @@ export default function PlayerItemContainer(props: PlayerItemContainerProps) {
         payload.senderName,
         payload.senderObjectName
       )
-    );
-    on('playerTradeResponse', (payload) =>
+    ));
+    unsubs.push(on('playerTradeResponse', (payload) =>
       socket_responseReceived.current(payload.accept, payload.object)
-    );
+    ));
+    return () => { unsubs.forEach(u => u()); };
   }, [on]);
 
 	// Lógica para criar Item Customizado direto da ficha

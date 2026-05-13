@@ -90,12 +90,12 @@ export default function PortraitDiceContainer(props: {
       else diceData.current = undefined;
     }
 
-    on('diceRoll', (payload) => {
+    const unsub1 = on('diceRoll', (payload) => {
       if (payload.playerId !== props.playerId) return;
       showDiceRoll();
     });
 
-    on('diceResult', (payload) => {
+    const unsub2 = on('diceResult', (payload) => {
       if (payload.playerId !== props.playerId) return;
       const { results, dices } = payload;
 
@@ -113,7 +113,9 @@ export default function PortraitDiceContainer(props: {
         onDiceResult(first);
       }
     });
-  }, []);
+
+    return () => { unsub1?.(); unsub2?.(); };
+  }, [props.showDiceRoll]);
 
   return (
     <div className={styles.diceContainer}>

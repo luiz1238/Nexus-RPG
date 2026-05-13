@@ -223,10 +223,11 @@ export default function PlayerEquipmentContainer(props: PlayerEquipmentContainer
 	});
 
   useEffect(() => {
-    on('equipmentAdd', (payload) => socket_equipmentAdd.current(payload.id, payload.name));
-    on('equipmentRemove', (payload) => socket_equipmentRemove.current(payload.id));
-    on('equipmentChange', (payload) => socket_equipmentChange.current(payload.equipment));
-    on('playerTradeRequest', (payload) =>
+    const unsubs: (() => void)[] = [];
+    unsubs.push(on('equipmentAdd', (payload) => socket_equipmentAdd.current(payload.id, payload.name)));
+    unsubs.push(on('equipmentRemove', (payload) => socket_equipmentRemove.current(payload.id)));
+    unsubs.push(on('equipmentChange', (payload) => socket_equipmentChange.current(payload.equipment)));
+    unsubs.push(on('playerTradeRequest', (payload) =>
       socket_requestReceived.current(
         payload.type,
         payload.tradeId,
@@ -234,10 +235,11 @@ export default function PlayerEquipmentContainer(props: PlayerEquipmentContainer
         payload.senderName,
         payload.senderObjectName
       )
-    );
-    on('playerTradeResponse', (payload) =>
+    ));
+    unsubs.push(on('playerTradeResponse', (payload) =>
       socket_responseReceived.current(payload.accept, payload.object)
-    );
+    ));
+    return () => { unsubs.forEach(u => u()); };
   }, [on]);
 
 	// Lógica de Criar Equipamento

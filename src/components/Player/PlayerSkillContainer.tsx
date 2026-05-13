@@ -128,13 +128,15 @@ export default function PlayerSkillContainer(props: PlayerSkillContainerProps) {
 	});
 
   useEffect(() => {
-    on('skillAdd', (payload) =>
+    const unsubs: (() => void)[] = [];
+    unsubs.push(on('skillAdd', (payload) =>
       socket_skillAdd.current(payload.id, payload.name, payload.specializationName)
-    );
-    on('skillRemove', (payload) => socket_skillRemove.current(payload.id));
-    on('skillChange', (payload) =>
+    ));
+    unsubs.push(on('skillRemove', (payload) => socket_skillRemove.current(payload.id)));
+    unsubs.push(on('skillChange', (payload) =>
       socket_skillChange.current(payload.id, payload.name, payload.specializationName)
-    );
+    ));
+    return () => { unsubs.forEach(u => u()); };
   }, [on]);
 
 	function onAddSkill(id: number) {

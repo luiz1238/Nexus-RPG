@@ -101,9 +101,11 @@ export default function PlayerSpellContainer(props: PlayerSpellContainerProps) {
 	});
 
   useEffect(() => {
-    on('spellAdd', (payload) => socket_spellAdd.current(payload.id, payload.name));
-    on('spellRemove', (payload) => socket_spellRemove.current(payload.id));
-    on('spellChange', (payload) => socket_spellChange.current(payload.spell));
+    const unsubs: (() => void)[] = [];
+    unsubs.push(on('spellAdd', (payload) => socket_spellAdd.current(payload.id, payload.name)));
+    unsubs.push(on('spellRemove', (payload) => socket_spellRemove.current(payload.id)));
+    unsubs.push(on('spellChange', (payload) => socket_spellChange.current(payload.spell)));
+    return () => { unsubs.forEach(u => u()); };
   }, [on]);
 
 	// Lógica de Criar Magia Customizada

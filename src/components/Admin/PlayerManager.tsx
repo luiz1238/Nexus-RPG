@@ -244,57 +244,59 @@ export default function PlayerManager(props: PlayerManagerProps) {
 	}
 
   useEffect(() => {
-    on('playerAttributeStatusChange', (p) =>
+    const unsubs: (() => void)[] = [];
+    unsubs.push(on('playerAttributeStatusChange', (p) =>
       dispatch({ type: 'updateAttributeStatus', data: [p.playerId, p.attStatusId, p.value] })
-    );
-    on('playerNameChange', (p) =>
+    ));
+    unsubs.push(on('playerNameChange', (p) =>
       dispatch({ type: 'updateName', data: [p.playerId, p.value] })
-    );
-    on('playerInfoChange', (p) =>
+    ));
+    unsubs.push(on('playerInfoChange', (p) =>
       dispatch({ type: 'updateInfo', data: [p.playerId, p.infoId, p.value] })
-    );
-    on('playerAttributeChange', (p) =>
+    ));
+    unsubs.push(on('playerAttributeChange', (p) =>
       dispatch({ type: 'updateAttribute', data: [p.playerId, p.attributeId, p.value, p.maxValue, false] })
-    );
-    on('playerSpecChange', (p) =>
+    ));
+    unsubs.push(on('playerSpecChange', (p) =>
       dispatch({ type: 'updateSpec', data: [p.playerId, p.specId, p.value] })
-    );
-    on('playerCurrencyChange', (p) =>
+    ));
+    unsubs.push(on('playerCurrencyChange', (p) =>
       dispatch({ type: 'updateCurrency', data: [p.playerId, p.currencyId, p.value] })
-    );
-    on('playerCharacteristicChange', (p) =>
+    ));
+    unsubs.push(on('playerCharacteristicChange', (p) =>
       dispatch({ type: 'updateCharacteristic', data: [p.playerId, p.characteristicId, p.value, p.modifier] })
-    );
-    on('playerSkillChange', (p) =>
+    ));
+    unsubs.push(on('playerSkillChange', (p) =>
       dispatch({ type: 'updateSkill', data: [p.playerId, p.skillId, p.value, p.modifier] })
-    );
-    on('playerEquipmentAdd', (p) =>
+    ));
+    unsubs.push(on('playerEquipmentAdd', (p) =>
       dispatch({ type: 'addEquipment', data: [p.playerId, p.equipment] })
-    );
-    on('playerEquipmentRemove', (p) =>
+    ));
+    unsubs.push(on('playerEquipmentRemove', (p) =>
       dispatch({ type: 'removeEquipment', data: [p.playerId, p.id] })
-    );
-    on('playerItemAdd', (p) =>
+    ));
+    unsubs.push(on('playerItemAdd', (p) =>
       dispatch({ type: 'addItem', data: [p.playerId, p.item, p.currentDescription, p.quantity] })
-    );
-    on('playerItemRemove', (p) =>
+    ));
+    unsubs.push(on('playerItemRemove', (p) =>
       dispatch({ type: 'removeItem', data: [p.playerId, p.id] })
-    );
-    on('playerItemChange', (p) =>
+    ));
+    unsubs.push(on('playerItemChange', (p) =>
       dispatch({ type: 'updateItem', data: [p.playerId, p.itemID, p.currentDescription, p.quantity] })
-    );
-    on('playerSpellAdd', (p) =>
+    ));
+    unsubs.push(on('playerSpellAdd', (p) =>
       dispatch({ type: 'addSpell', data: [p.playerId, p.spell] })
-    );
-    on('playerSpellRemove', (p) =>
+    ));
+    unsubs.push(on('playerSpellRemove', (p) =>
       dispatch({ type: 'removeSpell', data: [p.playerId, p.spellId] })
-    );
-    on('playerMaxLoadChange', (p) =>
+    ));
+    unsubs.push(on('playerMaxLoadChange', (p) =>
       dispatch({ type: 'updateMaxLoad', data: [p.playerId, p.newLoad] })
-    );
-    on('playerSpellSlotsChange', (p) =>
+    ));
+    unsubs.push(on('playerSpellSlotsChange', (p) =>
       dispatch({ type: 'updateSpellSlots', data: [p.playerId, p.newSpellSlots] })
-    );
+    ));
+    return () => { unsubs.forEach(u => u()); };
   }, [on]);
 
 	if (players.length === 0)

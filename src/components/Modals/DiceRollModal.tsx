@@ -12,9 +12,9 @@ import api from '../../utils/api';
 import { ErrorLogger } from '../../contexts';
 
 export type DiceRoll = {
-	dices: (Omit<DiceRequest, 'num'> & { num?: number }) | DiceRequest[] | null;
-	resolverKey?: DiceResolverKey;
-	onResult?: (result: DiceResponse[]) => void | DiceResponse[];
+  dices: (Omit<DiceRequest, 'num'> & { num?: number }) | DiceRequest[] | null;
+  resolverKey?: DiceResolverKey;
+  onResult?: (result: DiceResponse[]) => void | DiceResponse[];
 };
 
 export type DiceRollModalProps = DiceRoll & {
@@ -27,129 +27,122 @@ export type DiceRollModalProps = DiceRoll & {
 export default function DiceRollModal(props: DiceRollModalProps) {
   const [dices, setDices] = useState(props.dices);
   const[num, setNum] = useState(1);
-  const [diceRoll, setDiceRoll] = useState<DiceRollResult>({ dices: null });
-  const lastRoll = useRef<DiceRollResult>({ dices: null });
   const diceRef = useRef<DiceRollResult | null>(null);
-  const rollKeyRef = useRef(props._key || 0);
 
-	useEffect(() => {
-		if (props.dices === null) return;
-		if (Array.isArray(props.dices))
-			return roll({
-				dices: props.dices,
-				onResult: props.onResult,
-				resolverKey: props.resolverKey,
-			});
-		else if (props.dices.num) {
-			const dices = {
-				...props.dices,
-				num: props.dices.num,
-			};
-			return roll({
-				dices,
-				onResult: props.onResult,
-				resolverKey: props.resolverKey,
-			});
-		}
-		setDices(props.dices);
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [props.dices]);
+  useEffect(() => {
+    if (props.dices === null) return;
+    if (Array.isArray(props.dices))
+      return roll({
+        dices: props.dices,
+        onResult: props.onResult,
+        resolverKey: props.resolverKey,
+      });
+    else if (props.dices.num) {
+      const dices = {
+        ...props.dices,
+        num: props.dices.num,
+      };
+      return roll({
+        dices,
+        onResult: props.onResult,
+        resolverKey: props.resolverKey,
+      });
+    }
+    setDices(props.dices);
+  }, [props.dices]);
 
-	function onNumChange(coeff: number) {
-		setNum((n) => {
-			return clamp(n + coeff, 1, 9);
-		});
-	}
+  function onNumChange(coeff: number) {
+    setNum((n) => {
+      return clamp(n + coeff, 1, 9);
+    });
+  }
 
-	function onExited() {
-		setNum(1);
-		if (diceRef.current) {
-			setDiceRoll(diceRef.current);
-			diceRef.current = null;
-		}
-	}
+  function onExited() {
+    setNum(1);
+    if (diceRef.current) {
+      diceRef.current = null;
+    }
+  }
 
-	function roll(dice?: DiceRollResult) {
-		if (dice) {
-			lastRoll.current = dice;
-			return setDiceRoll(dice);
-		}
-		if (dices === null || Array.isArray(dices)) return;
+  function roll(dice?: DiceRollResult) {
+    if (dice) {
+      diceRef.current = dice;
+      return;
+    }
+    if (dices === null || Array.isArray(dices)) return;
 
-		const roll = {
-			dices: { ...dices, num },
-			onResult: props.onResult,
-			resolverKey: props.resolverKey,
-		};
-		lastRoll.current = roll;
-		diceRef.current = roll;
+    const roll = {
+      dices: { ...dices, num },
+      onResult: props.onResult,
+      resolverKey: props.resolverKey,
+    };
+    diceRef.current = roll;
+    setDices(null);
+  }
 
-		setDices(null);
-	}
+  const showResult = props.dices !== null && !dices;
 
-	return (
-		<>
-			<SheetModal
-				title='Rolagem de Dados'
-				show={dices !== null}
-				onHide={() => setDices(null)}
-				onExited={onExited}
-				applyButton={{
-					name: 'Rolar',
-					onApply: () => roll(),
-				}}
-				centered>
-				<Container fluid className='text-center'>
-					<Row className='mb-1 justify-content-center'>
-						<Col>Número de Dados</Col>
-					</Row>
-					<Row className='justify-content-center'>
-						<Col xs='auto'>
-							<Button variant='secondary' onClick={() => onNumChange(-1)} size='sm'>
-								-
-							</Button>
-						</Col>
-						<Col
-							xs='auto'
-							className='align-self-center'
-							style={{ width: '1rem', padding: 0 }}>
-							{num}
-						</Col>
-						<Col xs='auto'>
-							<Button variant='secondary' onClick={() => onNumChange(1)} size='sm'>
-								+
-							</Button>
-						</Col>
-					</Row>
-				</Container>
-			</SheetModal>
-        <DiceRollResultModal
-          {...diceRoll}
-          npcId={props.npcId}
-          _key={props._key}
-          onHide={() => {
-            setDiceRoll({ dices: null });
-          }}
-          onCloseModal={() => props.onHide()}
-          onRollAgain={() => {
-            rollKeyRef.current++;
-            setDiceRoll({ ...lastRoll.current, _key: rollKeyRef.current });
-          }}
-        />
-		</>
-	);
+  return (
+    <>
+      <SheetModal
+        title='Rolagem de Dados'
+        show={dices !== null}
+        onHide={() => setDices(null)}
+        onExited={onExited}
+        applyButton={{
+          name: 'Rolar',
+          onApply: () => roll(),
+        }}
+        centered>
+        <Container fluid className='text-center'>
+          <Row className='mb-1 justify-content-center'>
+            <Col>Número de Dados</Col>
+          </Row>
+          <Row className='justify-content-center'>
+            <Col xs='auto'>
+              <Button variant='secondary' onClick={() => onNumChange(-1)} size='sm'>
+                -
+              </Button>
+            </Col>
+            <Col
+              xs='auto'
+              className='align-self-center'
+              style={{ width: '1rem', padding: 0 }}>
+              {num}
+            </Col>
+            <Col xs='auto'>
+              <Button variant='secondary' onClick={() => onNumChange(1)} size='sm'>
+                +
+              </Button>
+            </Col>
+          </Row>
+        </Container>
+      </SheetModal>
+      <DiceRollResultModal
+        dices={showResult ? diceRef.current?.dices ?? null : null}
+        onResult={diceRef.current?.onResult}
+        resolverKey={diceRef.current?.resolverKey}
+        npcId={props.npcId}
+        _key={props._key}
+        onHide={() => {}}
+        onCloseModal={() => props.onHide()}
+        onRollAgain={() => props.onRollAgain()}
+      />
+    </>
+  );
 }
 
 type DiceRollResult = Omit<DiceRoll, 'dices'> & {
   dices: DiceRequest | DiceRequest[] | null;
-  _key?: number;
 };
 
 type DiceRollResultModalProps = Omit<
   DiceRollModalProps,
-  'dices' | 'resolverKey' | 'onResult'
-> &
-  DiceRollResult & { onCloseModal?: () => void };
+  'dices'
+> & {
+  dices: DiceRequest | DiceRequest[] | null;
+  onCloseModal?: () => void;
+};
 
 type DisplayDice = {
 	roll: number | string;

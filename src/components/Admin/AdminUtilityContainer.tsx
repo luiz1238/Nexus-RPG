@@ -29,12 +29,13 @@ export default function AdminUtilityContainer(props: AdminUtilityContainerProps)
   useEffect(() => {
     setBasicNpcs(JSON.parse(localStorage.getItem('admin_npcs') || '[]') as NPC[]);
 
-    on('playerNameChange', (payload) => {
+    const unsub = on('playerNameChange', (payload) => {
       const npc = complexNpcs.find((npc) => npc.id === payload.playerId);
       if (!npc) return;
       npc.name = payload.value;
       setComplexNpcs([...complexNpcs]);
     });
+    return () => { unsub?.(); };
   }, [on]);
 
 	useEffect(() => {

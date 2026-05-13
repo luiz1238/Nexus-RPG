@@ -39,12 +39,13 @@ export default function PortraitSideAttributeContainer(props: {
   }, []);
 
   useEffect(() => {
-    on('playerAttributeChange', (payload) => {
+    const unsub = on('playerAttributeChange', (payload) => {
       setSideAttribute((attr) => {
         if (attr === null || payload.attributeId !== attr.Attribute.id) return attr;
         return { value: payload.value, show: payload.show, Attribute: { ...attr.Attribute } };
       });
     });
+    return () => { unsub?.(); };
   }, [on]);
 
   const attributeStyle = useMemo(

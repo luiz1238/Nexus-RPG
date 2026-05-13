@@ -44,7 +44,7 @@ export default function PortraitAvatar(props: {
   }, []);
 
   useEffect(() => {
-    on('playerAttributeStatusChange', (payload) => {
+    const unsub = on('playerAttributeStatusChange', (payload) => {
       if (payload.playerId !== props.playerId) return;
       const newStatus = [...attributeStatus];
 
@@ -75,6 +75,7 @@ export default function PortraitAvatar(props: {
           });
       }
     });
+    return () => { unsub?.(); };
   }, [on, attributeStatus, props.playerId]);
 
   return (

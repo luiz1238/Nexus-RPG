@@ -18,7 +18,7 @@ export default function DiceList(props: { players: { id: number; name: string }[
   useEffect(() => {
     setValues(JSON.parse(localStorage.getItem('admin_dice_history') || '[]') as Dice[]);
 
-    on('diceResult', (payload) => {
+    const unsub = on('diceResult', (payload) => {
       const playerName =
         props.players.find((p) => p.id === payload.playerId)?.name || 'Desconhecido';
 
@@ -57,6 +57,7 @@ export default function DiceList(props: { players: { id: number; name: string }[
         return [message, ...values];
       });
     });
+    return () => { unsub?.(); };
   }, [on]);
 
 	useEffect(() => {

@@ -35,11 +35,12 @@ function PlayerSheet(props: PageProps) {
   const { on, ready } = useRealtime();
 
   useEffect(() => {
-    on('playerDelete', (payload) => {
+    const unsub = on('playerDelete', (payload) => {
       if (payload.playerId === props.player.id) {
         api.delete('/player').then(() => Router.push('/'));
       }
     });
+    return () => { unsub?.(); };
   }, [on, props.player.id]);
 
   if (!ready)

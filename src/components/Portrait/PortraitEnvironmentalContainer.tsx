@@ -50,7 +50,8 @@ export default function PortraitEnvironmentalContainer(props: {
   }, []);
 
   useEffect(() => {
-    on('environmentChange', (payload) => setEnvironment(payload.value as Environment));
+    const unsub = on('environmentChange', (payload) => setEnvironment(payload.value as Environment));
+    return () => { unsub?.(); };
   }, [on]);
 
   let divStyle: CSSProperties = { width: 800 };
@@ -93,7 +94,7 @@ function PortraitAttributesContainer(props: {
   }, []);
 
   useEffect(() => {
-    on('playerAttributeChange', (payload) => {
+    const unsub = on('playerAttributeChange', (payload) => {
       if (payload.playerId !== props.playerId) return;
 
       setAttributes((attributes) => {
@@ -109,6 +110,7 @@ function PortraitAttributesContainer(props: {
         return newAttributes;
       });
     });
+    return () => { unsub?.(); };
   }, [on, props.playerId]);
 
   return (
@@ -155,15 +157,16 @@ function PortraitNameContainer(props: {
   }, []);
 
   useEffect(() => {
-    on('playerNameChange', (payload) => {
+    const unsub1 = on('playerNameChange', (payload) => {
       if (payload.playerId !== props.playerId) return;
       setPlayerName((pn) => ({ ...pn, name: payload.value }));
     });
 
-    on('playerNameShowChange', (payload) => {
+    const unsub2 = on('playerNameShowChange', (payload) => {
       if (payload.playerId !== props.playerId) return;
       setPlayerName((pn) => ({ ...pn, show: payload.show }));
     });
+    return () => { unsub1?.(); unsub2?.(); };
   }, [on, props.playerId]);
 
   return (
