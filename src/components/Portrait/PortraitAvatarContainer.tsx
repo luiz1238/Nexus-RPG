@@ -15,6 +15,7 @@ export default function PortraitAvatar(props: {
   playerId: number;
 }) {
   const [src, setSrc] = useState('#');
+  const srcRef = useRef('#');
   const [showAvatar, setShowAvatar] = useState(false);
   const [attributeStatus, setAttributeStatus] = useState(props.attributeStatus);
   const previousStatusID = useRef(Number.MAX_SAFE_INTEGER);
@@ -31,8 +32,15 @@ export default function PortraitAvatar(props: {
     previousStatusID.current = id;
     api
       .get(`/sheet/player/avatar/${id}`, { params: { playerID: props.playerId } })
-      .then((res) => setSrc(`${res.data.link}?v=${Date.now()}`))
-      .catch(() => setSrc('/avatar404.png'));
+      .then((res) => {
+        const newSrc = `${res.data.link}?v=${Date.now()}`;
+        srcRef.current = newSrc;
+        setSrc(newSrc);
+      })
+      .catch(() => {
+        srcRef.current = '/avatar404.png';
+        setSrc('/avatar404.png');
+      });
   }, []);
 
   useEffect(() => {
@@ -55,14 +63,19 @@ export default function PortraitAvatar(props: {
             params: { playerID: props.playerId },
           })
           .then((res) => {
-            if (res.data.link === src.split('?')[0]) return;
+            if (res.data.link === srcRef.current.split('?')[0]) return;
             setShowAvatar(false);
-            setSrc(`${res.data.link}?v=${Date.now()}`);
+            const newSrc = `${res.data.link}?v=${Date.now()}`;
+            srcRef.current = newSrc;
+            setSrc(newSrc);
           })
-          .catch(() => setSrc('/avatar404.png'));
+          .catch(() => {
+            srcRef.current = '/avatar404.png';
+            setSrc('/avatar404.png');
+          });
       }
     });
-  }, [on, attributeStatus, props.playerId, src]);
+  }, [on, attributeStatus, props.playerId]);
 
   return (
     <Fade in={showAvatar}>

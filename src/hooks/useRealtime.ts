@@ -6,7 +6,6 @@ import type { BroadcastEventName, BroadcastPayloads } from '../utils/realtime';
 type EventCallback<T extends BroadcastEventName> = (payload: BroadcastPayloads[T]) => void;
 
 let channelInstance: RealtimeChannel | null = null;
-let refCount = 0;
 
 function getChannel(): RealtimeChannel {
   if (!channelInstance) {
@@ -17,26 +16,15 @@ function getChannel(): RealtimeChannel {
     });
     channelInstance.subscribe();
   }
-  refCount++;
   return channelInstance;
 }
 
-function releaseChannel() {
-  refCount--;
-  if (refCount <= 0 && channelInstance) {
-    supabaseClient.removeChannel(channelInstance);
-    channelInstance = null;
-    refCount = 0;
-  }
-}
-
 export default function useRealtime() {
-  const channelRef = useRef<RealtimeChannel | null>(null);
-  const [ready, setReady] = useState(() => channelInstance?.state === 'joined');
+  const channelRef = useRef<RealtimeChannel>(getChannel());
+  const [ready, setReady] = useState(() => channelRef.current.state === 'joined');
 
   useEffect(() => {
-    const channel = getChannel();
-    channelRef.current = channel;
+    const channel = channelRef.current;
 
     if (channel.state === 'joined') {
       setReady(true);
@@ -50,15 +38,11 @@ export default function useRealtime() {
 
     return () => {
       unsubscribe?.();
-      channelRef.current = null;
-      setReady(false);
-      releaseChannel();
     };
   }, []);
 
   const on = useCallback(<T extends BroadcastEventName>(event: T, callback: EventCallback<T>) => {
     const channel = channelRef.current;
-    if (!channel) return;
 
     channel.on('broadcast' as any, { event } as any, (payload: { payload: BroadcastPayloads[T] }) => {
       callback(payload.payload);

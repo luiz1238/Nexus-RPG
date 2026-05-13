@@ -165,8 +165,7 @@ function DiceRollResultModal(props: DiceRollResultModalProps) {
 
 	const logError = useContext(ErrorLogger);
 
-	const rollAgain = useRef(false);
-	const descriptionDelayTimeout = useRef<NodeJS.Timeout | null>(null);
+  const descriptionDelayTimeout = useRef<NodeJS.Timeout | null>(null);
 
 	// Carrega a cor salva assim que a tela abre
 	useEffect(() => {
@@ -257,28 +256,19 @@ function DiceRollResultModal(props: DiceRollResultModalProps) {
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [diceResults]);
 
-	function onHide() {
-		if (descriptionDelayTimeout.current) {
-			clearTimeout(descriptionDelayTimeout.current);
-			descriptionDelayTimeout.current = null;
-		}
-		
-		// Esconde apenas o modal do resultado atual
-		props.onHide();
+  function onHide() {
+    if (descriptionDelayTimeout.current) {
+      clearTimeout(descriptionDelayTimeout.current);
+      descriptionDelayTimeout.current = null;
+    }
+    props.onHide();
+    if (props.onCloseModal) props.onCloseModal();
+  }
 
-		// A MÁGICA: Só chama o OnClose (que fecha tudo) se não formos rolar de novo!
-		if (!rollAgain.current && props.onCloseModal) {
-			props.onCloseModal();
-		}
-	}
-
-	function onExited() {
-		setDiceResults([]);
-		setDescriptionFade(false);
-		// Se o botão "Rolar Novamente" foi clicado, ele dispara a nova rolagem aqui
-		if (rollAgain.current) props.onRollAgain();
-		rollAgain.current = false;
-	}
+  function onExited() {
+    setDiceResults([]);
+    setDescriptionFade(false);
+  }
 
 	return (
 		<SheetModal
@@ -290,14 +280,15 @@ function DiceRollResultModal(props: DiceRollResultModalProps) {
 			backdrop={!result ? 'static' : true}
 			keyboard={!result ? false : true}
 			centered
-			applyButton={{
-				name: 'Rolar Novamente',
-				onApply: () => {
-					rollAgain.current = true;
-					onHide(); // Fecha este para o onExited disparar a nova rolagem
-				},
-				disabled: !result,
-			}}
+      applyButton={{
+        name: 'Rolar Novamente',
+        onApply: () => {
+          setDiceResults([]);
+          setDescriptionFade(false);
+          props.onRollAgain();
+        },
+        disabled: !result,
+      }}
 			bodyStyle={{ minHeight: 120, display: 'flex', alignItems: 'center' }}>
 			
 			{/* Seletor de Cor do Dado - Mantendo a preferência do jogador */}
