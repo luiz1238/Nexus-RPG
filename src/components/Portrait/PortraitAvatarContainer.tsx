@@ -97,6 +97,8 @@ export default function PortraitAvatar(props: {
     <Fade in={showAvatar}>
       <div
         style={{
+          width: 420,
+          height: 600,
           filter: diceColor ? `drop-shadow(0 0 15px #${diceColor})` : 'none',
         }}
       >
