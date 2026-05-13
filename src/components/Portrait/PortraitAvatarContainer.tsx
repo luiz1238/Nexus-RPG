@@ -10,6 +10,21 @@ export type PortraitAttributeStatus = {
   attribute_status_id: number;
 }[];
 
+function isDataUrl(url: string) {
+  return url.startsWith('data:');
+}
+
+function appendCacheBust(url: string): string {
+  if (isDataUrl(url)) return url;
+  const sep = url.includes('?') ? '&' : '?';
+  return `${url}${sep}v=${Date.now()}`;
+}
+
+function stripCacheBust(url: string): string {
+  if (isDataUrl(url)) return url;
+  return url.split('?')[0];
+}
+
 export default function PortraitAvatar(props: {
   attributeStatus: PortraitAttributeStatus;
   playerId: number;
@@ -33,7 +48,7 @@ export default function PortraitAvatar(props: {
     api
       .get(`/sheet/player/avatar/${id}`, { params: { playerID: props.playerId } })
       .then((res) => {
-        const newSrc = `${res.data.link}?v=${Date.now()}`;
+        const newSrc = appendCacheBust(res.data.link);
         srcRef.current = newSrc;
         setSrc(newSrc);
       })
@@ -63,9 +78,9 @@ export default function PortraitAvatar(props: {
             params: { playerID: props.playerId },
           })
           .then((res) => {
-            if (res.data.link === srcRef.current.split('?')[0]) return;
+            if (res.data.link === stripCacheBust(srcRef.current)) return;
             setShowAvatar(false);
-            const newSrc = `${res.data.link}?v=${Date.now()}`;
+            const newSrc = appendCacheBust(res.data.link);
             srcRef.current = newSrc;
             setSrc(newSrc);
           })

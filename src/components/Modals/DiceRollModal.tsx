@@ -126,7 +126,6 @@ export default function DiceRollModal(props: DiceRollModalProps) {
         _key={props._key}
         onHide={() => {}}
         onCloseModal={() => props.onHide()}
-        onRollAgain={() => props.onRollAgain()}
       />
     </>
   );
@@ -138,88 +137,86 @@ type DiceRollResult = Omit<DiceRoll, 'dices'> & {
 
 type DiceRollResultModalProps = Omit<
   DiceRollModalProps,
-  'dices'
+  'dices' | 'onRollAgain'
 > & {
   dices: DiceRequest | DiceRequest[] | null;
   onCloseModal?: () => void;
 };
 
 type DisplayDice = {
-	roll: number | string;
-	description?: number | string;
+  roll: number | string;
+  description?: number | string;
 };
 
 function DiceRollResultModal(props: DiceRollResultModalProps) {
-	const[diceResults, setDiceResults] = useState<DiceResponse[]>([]);
-	const[descriptionFade, setDescriptionFade] = useState(false);
-	
-	// Estado para a Cor do Dado escolhida pelo jogador (Roxo Neon padrão)
-	const [diceColor, setDiceColor] = useState('#8a2be2');
+  const[diceResults, setDiceResults] = useState<DiceResponse[]>([]);
+  const[descriptionFade, setDescriptionFade] = useState(false);
 
-	const logError = useContext(ErrorLogger);
+  const [diceColor, setDiceColor] = useState('#8a2be2');
+
+  const logError = useContext(ErrorLogger);
 
   const descriptionDelayTimeout = useRef<NodeJS.Timeout | null>(null);
+  const [rollKey, setRollKey] = useState(0);
 
-	// Carrega a cor salva assim que a tela abre
-	useEffect(() => {
-		const savedColor = localStorage.getItem('playerDiceColor');
-		if (savedColor) setDiceColor(savedColor);
-	},[]);
+  useEffect(() => {
+    const savedColor = localStorage.getItem('playerDiceColor');
+    if (savedColor) setDiceColor(savedColor);
+  },[]);
 
-	// Salva a cor no navegador quando o jogador mudar
-	function handleColorChange(color: string) {
-		setDiceColor(color);
-		localStorage.setItem('playerDiceColor', color);
-	}
+  function handleColorChange(color: string) {
+    setDiceColor(color);
+    localStorage.setItem('playerDiceColor', color);
+  }
 
-	const result: DisplayDice | undefined = useMemo(() => {
-		if (diceResults.length === 1)
-			return {
-				roll: diceResults[0].roll,
-				description: diceResults[0].resultType?.description,
-			};
-		else if (diceResults.length > 1) {
-			if (Array.isArray(props.dices)) {
-				const dices = diceResults.map((d) => d.roll);
-				const sum = dices.reduce((a, b) => a + b, 0);
-				return {
-					roll: sum,
-					description: dices.join(' + '),
-				};
-			} else {
-				type _Result = { description?: string; weight: number };
-				let max: _Result = { weight: Number.MIN_SAFE_INTEGER };
-				let min: _Result = { weight: Number.MAX_SAFE_INTEGER };
+  const result: DisplayDice | undefined = useMemo(() => {
+    if (diceResults.length === 1)
+      return {
+        roll: diceResults[0].roll,
+        description: diceResults[0].resultType?.description,
+      };
+    else if (diceResults.length > 1) {
+      if (Array.isArray(props.dices)) {
+        const dices = diceResults.map((d) => d.roll);
+        const sum = dices.reduce((a, b) => a + b, 0);
+        return {
+          roll: sum,
+          description: dices.join(' + '),
+        };
+      } else {
+        type _Result = { description?: string; weight: number };
+        let max: _Result = { weight: Number.MIN_SAFE_INTEGER };
+        let min: _Result = { weight: Number.MAX_SAFE_INTEGER };
 
-				for (const result of diceResults) {
-					if (result.resultType) {
-						if (result.resultType.successWeight > max.weight)
-							max = {
-								description: result.resultType.description,
-								weight: result.resultType.successWeight,
-							};
+        for (const result of diceResults) {
+          if (result.resultType) {
+            if (result.resultType.successWeight > max.weight)
+              max = {
+                description: result.resultType.description,
+                weight: result.resultType.successWeight,
+              };
 
-						if (result.resultType.successWeight < min.weight)
-							min = {
-								description: result.resultType.description,
-								weight: result.resultType.successWeight,
-							};
-					}
-				}
+            if (result.resultType.successWeight < min.weight)
+              min = {
+                description: result.resultType.description,
+                weight: result.resultType.successWeight,
+              };
+          }
+        }
 
-				const roll = diceResults.map((d) => d.roll).join(' | ');
-				let description: string | undefined;
+        const roll = diceResults.map((d) => d.roll).join(' | ');
+        let description: string | undefined;
 
-				if (min.description && max.description) {
-					if (min.description === max.description) description = min.description;
-					else description = `${min.description} - ${max.description}`;
-				} else description = min.description || max.description;
+        if (min.description && max.description) {
+          if (min.description === max.description) description = min.description;
+          else description = `${min.description} - ${max.description}`;
+        } else description = min.description || max.description;
 
-				return { roll, description };
-			}
-		}
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	},[diceResults]);
+        return { roll, description };
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[diceResults]);
 
   useEffect(() => {
     if (props.dices === null) return;
@@ -240,14 +237,14 @@ function DiceRollResultModal(props: DiceRollResultModalProps) {
         setDiceResults(results);
       })
       .catch(logError);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [props._key, props.dices]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [props._key, props.dices, rollKey]);
 
-	useEffect(() => {
-		if (result && (diceResults.length > 1 || diceResults[0].resultType))
-			descriptionDelayTimeout.current = setTimeout(() => setDescriptionFade(true), 750);
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [diceResults]);
+  useEffect(() => {
+    if (result && (diceResults.length > 1 || diceResults[0].resultType))
+      descriptionDelayTimeout.current = setTimeout(() => setDescriptionFade(true), 750);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [diceResults]);
 
   function onHide() {
     if (descriptionDelayTimeout.current) {
@@ -263,81 +260,85 @@ function DiceRollResultModal(props: DiceRollResultModalProps) {
     setDescriptionFade(false);
   }
 
-	return (
-		<SheetModal
-			show={props.dices != null}
-			onExited={onExited}
-			title='Resultado da Rolagem'
-			onHide={onHide}
-			closeButton={{ disabled: !result }}
-			backdrop={!result ? 'static' : true}
-			keyboard={!result ? false : true}
-			centered
+  function onRollAgain() {
+    if (descriptionDelayTimeout.current) {
+      clearTimeout(descriptionDelayTimeout.current);
+      descriptionDelayTimeout.current = null;
+    }
+    setDiceResults([]);
+    setDescriptionFade(false);
+    setRollKey((k) => k + 1);
+  }
+
+  return (
+    <SheetModal
+      show={props.dices != null}
+      onExited={onExited}
+      title='Resultado da Rolagem'
+      onHide={onHide}
+      closeButton={{ disabled: !result }}
+      backdrop={!result ? 'static' : true}
+      keyboard={!result ? false : true}
+      centered
       applyButton={{
         name: 'Rolar Novamente',
-        onApply: () => {
-          setDiceResults([]);
-          setDescriptionFade(false);
-          props.onRollAgain();
-        },
+        onApply: onRollAgain,
         disabled: !result,
       }}
-			bodyStyle={{ minHeight: 120, display: 'flex', alignItems: 'center' }}>
-			
-			{/* Seletor de Cor do Dado - Mantendo a preferência do jogador */}
-			<div style={{ position: 'absolute', top: '15px', right: '50px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-				<label style={{ fontSize: '0.8rem', color: '#9d8db3' }}>Cor do Dado:</label>
-				<input 
-					type="color" 
-					value={diceColor} 
-					onChange={(e) => handleColorChange(e.target.value)}
-					style={{ 
-						border: 'none', 
-						width: '25px', 
-						height: '25px', 
-						cursor: 'pointer', 
-						backgroundColor: 'transparent',
-						borderRadius: '4px'
-					}}
-				/>
-			</div>
+      bodyStyle={{ minHeight: 120, display: 'flex', alignItems: 'center' }}>
 
-			<Container fluid className='text-center'>
-				{!result && (
-					<Row>
-						<Col>
-							<Spinner animation='border' style={{ color: diceColor }} />
-						</Col>
-					</Row>
-				)}
-				<Row>
-					{result && (
-						<Fade in appear>
-							<Col 
-								className='h1 m-0' 
-								style={{ 
-									color: 'white', 
-									fontWeight: 'bold',
-									fontSize: '4rem',
-									// O efeito Neon que você pediu, usando a cor selecionada
-									textShadow: `0 0 10px ${diceColor}, 0 0 20px ${diceColor}` 
-								}}
-							>
-								{result.roll}
-							</Col>
-						</Fade>
-					)}
-				</Row>
-				<Row className="mt-2">
-					{result && (
-						<Fade in={descriptionFade}>
-							<Col style={{ color: '#c4a7e7', fontSize: '1.2rem' }}>
-								{result.description}
-							</Col>
-						</Fade>
-					)}
-				</Row>
-			</Container>
-		</SheetModal>
-	);
+      <div style={{ position: 'absolute', top: '15px', right: '50px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <label style={{ fontSize: '0.8rem', color: '#9d8db3' }}>Cor do Dado:</label>
+        <input
+          type="color"
+          value={diceColor}
+          onChange={(e) => handleColorChange(e.target.value)}
+          style={{
+            border: 'none',
+            width: '25px',
+            height: '25px',
+            cursor: 'pointer',
+            backgroundColor: 'transparent',
+            borderRadius: '4px'
+          }}
+        />
+      </div>
+
+      <Container fluid className='text-center'>
+        {!result && (
+          <Row>
+            <Col>
+              <Spinner animation='border' style={{ color: diceColor }} />
+            </Col>
+          </Row>
+        )}
+        <Row>
+          {result && (
+            <Fade in appear>
+              <Col
+                className='h1 m-0'
+                style={{
+                  color: 'white',
+                  fontWeight: 'bold',
+                  fontSize: '4rem',
+                  textShadow: `0 0 10px ${diceColor}, 0 0 20px ${diceColor}`
+                }}
+              >
+                {result.roll}
+              </Col>
+            </Fade>
+          )}
+        </Row>
+        <Row className="mt-2">
+          {result && (
+            <Fade in={descriptionFade}>
+              <Col style={{ color: '#c4a7e7', fontSize: '1.2rem' }}>
+                {result.description}
+              </Col>
+            </Fade>
+          )}
+        </Row>
+      </Container>
+    </SheetModal>
+  );
 }
