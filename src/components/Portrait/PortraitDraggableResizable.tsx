@@ -67,44 +67,61 @@ export default function PortraitDraggableResizable({
 
   if (!loaded) return null;
 
+  const wrapperStyle: React.CSSProperties = {
+    position: 'absolute',
+    left: position.x,
+    top: position.y,
+    width: size.width,
+    height: size.height,
+    zIndex,
+  };
+
+  if (!debug) {
+    return (
+      <div style={wrapperStyle}>
+        {children}
+      </div>
+    );
+  }
+
   return (
     <Draggable
       position={position}
       onStop={onDragStop}
-      disabled={!debug}
       bounds={bounds || { left: 0, top: 0, right: CANVAS.width, bottom: CANVAS.height }}
       handle=".portrait-drag-handle"
     >
-      <div style={{ position: 'absolute', left: position.x, top: position.y, zIndex }}>
+      <div style={{ position: 'absolute', zIndex }}>
+        <div
+          className="portrait-drag-handle"
+          style={{
+            width: size.width,
+            height: 20,
+            cursor: 'move',
+            background: 'rgba(138,43,226,0.3)',
+            borderRadius: 4,
+            marginBottom: 2,
+            fontSize: 11,
+            color: '#c4a7e7',
+            textAlign: 'center',
+            lineHeight: '20px',
+          }}
+        >
+          arrastar
+        </div>
         <Resizable
           size={size}
           onResizeStop={onResizeStop}
-          enable={debug ? {
+          enable={{
             top: true, bottom: true, left: true, right: true,
             topRight: true, bottomRight: true, bottomLeft: true, topLeft: true,
-          } : false}
+          }}
           lockAspectRatio={lockAspectRatio}
           style={{
-            border: debug ? '2px dashed rgba(138,43,226,0.6)' : 'none',
-            borderRadius: debug ? 4 : 0,
+            border: '2px dashed rgba(138,43,226,0.6)',
+            borderRadius: 4,
           }}
         >
-          {debug && (
-            <div
-              className="portrait-drag-handle"
-              style={{
-                position: 'absolute',
-                top: -8,
-                left: -8,
-                width: size.width + 16,
-                height: 20,
-                cursor: 'move',
-                background: 'rgba(138,43,226,0.3)',
-                borderRadius: 4,
-                zIndex: 999,
-              }}
-            />
-          )}
           {children}
         </Resizable>
       </div>

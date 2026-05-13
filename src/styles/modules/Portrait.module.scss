@@ -6,12 +6,12 @@ $glow-purple: rgba(138, 43, 226, 0.8);
   position: relative;
   width: $portrait-width;
   height: $portrait-height;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .editor {
   position: absolute;
-  bottom: -50px;
+  top: 810px;
   left: 10px;
   z-index: 300;
 }
