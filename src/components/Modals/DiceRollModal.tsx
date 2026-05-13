@@ -18,9 +18,10 @@ export type DiceRoll = {
 };
 
 export type DiceRollModalProps = DiceRoll & {
-	onHide: () => void;
-	onRollAgain: () => void;
-	npcId?: number;
+  onHide: () => void;
+  onRollAgain: () => void;
+  npcId?: number;
+  _key?: number;
 };
 
 export default function DiceRollModal(props: DiceRollModalProps) {
@@ -121,29 +122,30 @@ export default function DiceRollModal(props: DiceRollModalProps) {
 					</Row>
 				</Container>
 			</SheetModal>
-			<DiceRollResultModal
-				{...diceRoll}
-				npcId={props.npcId}
-				onHide={() => {
-					setDiceRoll({ dices: null });
-				}}
-				onCloseModal={() => props.onHide()} // AQUI: Só chama o OnHide final se não for "Rolar Novamente"
-				onRollAgain={() => setDiceRoll(lastRoll.current)}
-			/>
+        <DiceRollResultModal
+          {...diceRoll}
+          npcId={props.npcId}
+          _key={props._key}
+          onHide={() => {
+            setDiceRoll({ dices: null });
+          }}
+          onCloseModal={() => props.onHide()}
+          onRollAgain={() => setDiceRoll({ ...lastRoll.current, _key: (props._key || 0) + 1 })}
+        />
 		</>
 	);
 }
 
 type DiceRollResult = Omit<DiceRoll, 'dices'> & {
-	dices: DiceRequest | DiceRequest[] | null;
+  dices: DiceRequest | DiceRequest[] | null;
+  _key?: number;
 };
 
-// Adicionei o onCloseModal na tipagem para separar as ações
 type DiceRollResultModalProps = Omit<
-	DiceRollModalProps,
-	'dices' | 'resolverKey' | 'onResult'
+  DiceRollModalProps,
+  'dices' | 'resolverKey' | 'onResult'
 > &
-	DiceRollResult & { onCloseModal?: () => void };
+  DiceRollResult & { onCloseModal?: () => void };
 
 type DisplayDice = {
 	roll: number | string;
@@ -223,25 +225,27 @@ function DiceRollResultModal(props: DiceRollResultModalProps) {
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	},[diceResults]);
 
-	useEffect(() => {
-		if (props.dices === null) return;
-		api
-			.post('/dice', {
-				dices: props.dices,
-				resolverKey: props.resolverKey,
-				npcId: props.npcId,
-			})
-			.then((res) => {
-				let results: DiceResponse[] = res.data.results;
-				if (props.onResult) {
-					let newResults = props.onResult(results);
-					if (newResults) results = newResults;
-				}
-				setDiceResults(results);
-			})
-			.catch(logError);
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [props.dices]);
+  useEffect(() => {
+    if (props.dices === null) return;
+    setDiceResults([]);
+    setDescriptionFade(false);
+    api
+      .post('/dice', {
+        dices: props.dices,
+        resolverKey: props.resolverKey,
+        npcId: props.npcId,
+      })
+      .then((res) => {
+        let results: DiceResponse[] = res.data.results;
+        if (props.onResult) {
+          let newResults = props.onResult(results);
+          if (newResults) results = newResults;
+        }
+        setDiceResults(results);
+      })
+      .catch(logError);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [props._key, props.dices]);
 
 	useEffect(() => {
 		if (result && (diceResults.length > 1 || diceResults[0].resultType))
