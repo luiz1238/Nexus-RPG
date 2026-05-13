@@ -17,7 +17,7 @@ export default function useDiceRoll(npcId?: number): [DiceRollModalProps, DiceRo
 	const diceRollModalProps: DiceRollModalProps = {
 		...diceRoll,
 		onHide: () => setDiceRoll({ dices: null }),
-		onRollAgain: () => setDiceRoll(lastRoll.current),
+    onRollAgain: () => setDiceRoll({ ...lastRoll.current }),
 		npcId,
 	};
 

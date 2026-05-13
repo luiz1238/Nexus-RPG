@@ -46,8 +46,6 @@ export default function PortraitEnvironmentalContainer(props: {
     const color = params.get('dicecolor');
     if (color) {
       setDiceColor(color);
-      document.body.style.backgroundColor = `#${color}`;
-      document.body.style.backgroundImage = 'none';
     }
   }, []);
 
@@ -180,17 +178,17 @@ function PortraitNameContainer(props: {
       }}>
       <Fade in={props.debug || props.environment === 'idle'}>
         <div className={styles.nameContainer}>
-          <label
-            className={`${styles.name} nome`}
-            style={{
-              display: 'inline-block',
-              transform: 'rotate(-8deg)',
-              color: 'white',
-              textShadow: '2px 2px 0px #000, -1px -1px 0px #000, 1px -1px 0px #000, -1px 1px 0px #000, 0px 0px 15px rgba(0,0,0,0.5)',
-              textAlign: 'center',
-              lineHeight: '1.1',
-            }}
-          >
+        <label
+          className={`${styles.name} nome`}
+          style={{
+            display: 'inline-block',
+            transform: 'rotate(-8deg)',
+            color: `#${props.diceColor}`,
+            textShadow: `2px 2px 0px #000, -1px -1px 0px #000, 1px -1px 0px #000, -1px 1px 0px #000, 0 0 10px #${props.diceColor}, 0 0 20px #${props.diceColor}`,
+            textAlign: 'center',
+            lineHeight: '1.1',
+          }}
+        >
             {playerName.show ? playerName.name || 'Desconhecido' : '???'}
           </label>
         </div>
