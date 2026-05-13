@@ -1,5 +1,4 @@
 import type { GetServerSidePropsContext, InferGetServerSidePropsType } from 'next';
-import type { CSSProperties } from 'react';
 import { useEffect, useState } from 'react';
 import Button from 'react-bootstrap/Button';
 import Col from 'react-bootstrap/Col';
@@ -52,19 +51,16 @@ export default function Page(props: PageProps) {
 
 function CharacterPortrait(props: PageProps) {
   const [debug, setDebug] = useState(false);
-
-  const divStyle: CSSProperties =
-    props.nameOrientation === 'Direita' ? { left: 0 } : { left: 800 };
+  const [showDice, setShowDice] = useState(false);
 
   return (
-    <>
-      <PortraitDiceRollContainer
+    <div className={styles.portrait}>
+      <PortraitAvatarContainer
         playerId={props.playerId}
         attributeStatus={props.attributeStatus}
+      />
+      <PortraitSideAttributeContainer
         sideAttribute={props.sideAttribute}
-        diceColor={props.diceColor}
-        showDiceRoll={props.showDiceRoll}
-        nameOrientation={props.nameOrientation}
       />
       <PortraitEnvironmentalContainer
         attributes={props.attributes}
@@ -74,50 +70,6 @@ function CharacterPortrait(props: PageProps) {
         debug={debug}
         nameOrientation={props.nameOrientation}
       />
-      <div className={styles.editor} style={divStyle}>
-        <Button
-          variant='secondary'
-          title='Desativa o controle do ambiente pelo mestre.'
-          onClick={() => setDebug((e) => !e)}>
-          {debug ? 'Desativar' : 'Ativar'} Editor
-        </Button>
-      </div>
-    </>
-  );
-}
-
-function PortraitDiceRollContainer(props: {
-  playerId: number;
-  attributeStatus: PortraitAttributeStatus;
-  sideAttribute: {
-    Attribute: {
-      name: string;
-      id: number;
-      color: string;
-    };
-    value: number;
-    show: boolean;
-  } | null;
-  diceColor: string;
-  showDiceRoll: boolean;
-  nameOrientation: PortraitEnvironmentOrientation;
-}) {
-  const [showDice, setShowDice] = useState(false);
-
-  const divStyle: CSSProperties =
-    props.nameOrientation === 'Direita' ? { left: 0 } : { left: 800 };
-
-  return (
-    <div className={styles.container} style={divStyle}>
-      <div className={`${showDice ? 'show ' : ''}shadow`}>
-        <PortraitAvatarContainer
-          playerId={props.playerId}
-          attributeStatus={props.attributeStatus}
-        />
-        <PortraitSideAttributeContainer
-          sideAttribute={props.sideAttribute}
-        />
-      </div>
       <PortraitDiceContainer
         playerId={props.playerId}
         color={props.diceColor}
@@ -126,6 +78,14 @@ function PortraitDiceRollContainer(props: {
         onShowDice={() => setShowDice(true)}
         onHideDice={() => setShowDice(false)}
       />
+      <div className={styles.editor}>
+        <Button
+          variant='secondary'
+          title='Desativa o controle do ambiente pelo mestre.'
+          onClick={() => setDebug((e) => !e)}>
+          {debug ? 'Desativar' : 'Ativar'} Editor
+        </Button>
+      </div>
     </div>
   );
 }
@@ -182,8 +142,7 @@ export async function getServerSideProps(ctx: GetServerSidePropsContext) {
   );
 
   const sideAttribute =
-    results[1].PlayerAttributes.find((attr) => attr.Attribute.portrait === 'SECONDARY') ||
-    null;
+    results[1].PlayerAttributes.find((attr) => attr.Attribute.portrait === 'SECONDARY') || null;
 
   return {
     props: {

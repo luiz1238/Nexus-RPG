@@ -54,14 +54,8 @@ export default function PortraitEnvironmentalContainer(props: {
     return () => { unsub?.(); };
   }, [on]);
 
-  let divStyle: CSSProperties = { width: 800 };
-
-  props.nameOrientation === 'Direita'
-    ? (divStyle = { ...divStyle, left: 430, textAlign: 'start' })
-    : (divStyle = { ...divStyle, left: 0, textAlign: 'end' });
-
   return (
-    <div className={styles.container} style={divStyle}>
+    <>
       <PortraitAttributesContainer
         environment={environment}
         attributes={props.attributes}
@@ -74,8 +68,9 @@ export default function PortraitEnvironmentalContainer(props: {
         playerId={props.playerId}
         debug={props.debug}
         diceColor={diceColor}
+        nameOrientation={props.nameOrientation}
       />
-    </div>
+    </>
   );
 }
 
@@ -147,6 +142,7 @@ function PortraitNameContainer(props: {
   playerId: number;
   debug: boolean;
   diceColor: string;
+  nameOrientation: PortraitEnvironmentOrientation;
 }) {
   const [playerName, setPlayerName] = useState(props.playerName);
   const [positionY, setPositionY] = useState(0);
@@ -169,6 +165,10 @@ function PortraitNameContainer(props: {
     return () => { unsub1?.(); unsub2?.(); };
   }, [on, props.playerId]);
 
+  const alignStyle: CSSProperties = props.nameOrientation === 'Direita'
+    ? { right: 0, textAlign: 'end' }
+    : { left: 0, textAlign: 'start' };
+
   return (
     <Draggable
       axis='y'
@@ -180,18 +180,18 @@ function PortraitNameContainer(props: {
         localStorage.setItem('name-pos-y', posY.toString());
       }}>
       <Fade in={props.debug || props.environment === 'idle'}>
-        <div className={styles.nameContainer}>
-        <label
-          className={`${styles.name} nome`}
-          style={{
-            display: 'inline-block',
-            transform: 'rotate(-8deg)',
-            color: `#${props.diceColor}`,
-            textShadow: `2px 2px 0px #000, -1px -1px 0px #000, 1px -1px 0px #000, -1px 1px 0px #000, 0 0 10px #${props.diceColor}, 0 0 20px #${props.diceColor}`,
-            textAlign: 'center',
-            lineHeight: '1.1',
-          }}
-        >
+        <div className={styles.nameContainer} style={alignStyle}>
+          <label
+            className={`${styles.name} nome`}
+            style={{
+              display: 'inline-block',
+              transform: 'rotate(-8deg)',
+              color: `#${props.diceColor}`,
+              textShadow: `2px 2px 0px #000, -1px -1px 0px #000, 1px -1px 0px #000, -1px 1px 0px #000, 0 0 10px #${props.diceColor}, 0 0 20px #${props.diceColor}`,
+              textAlign: 'center',
+              lineHeight: '1.1',
+            }}
+          >
             {playerName.show ? playerName.name || 'Desconhecido' : '???'}
           </label>
         </div>
