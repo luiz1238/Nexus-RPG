@@ -135,26 +135,26 @@ export default function PortraitDiceContainer(props: {
       zIndex={200}
       playerId={props.playerId}
     >
-      <div className={styles.diceContainerInner}>
-        <video
-          muted
-          className={`${isDebugMode ? styles.diceDebug : `popout${props.showDice ? ' show' : ''} ${styles.dice}`}`}
-          ref={diceVideo}
-          preload="auto"
-        >
-          <source src='/dice_animation.webm' />
-        </video>
-        {(isDebugMode || diceResult !== null) && (
+    <div className={styles.diceContainerInner}>
+      <video
+        muted
+        className={`${isDebugMode ? styles.diceDebug : `popout${props.showDice ? ' show' : ''} ${styles.dice}`}`}
+        ref={diceVideo}
+        preload="auto"
+      >
+        <source src='/dice_animation.webm' />
+      </video>
+      {(isDebugMode || diceResult !== null || diceDescription !== null) && (
+        <div className={styles.diceTextGroup}>
           <div className={styles.result} ref={diceResultRef}>
-            {isDebugMode ? '42' : (diceResult || lastDiceResult.current)}
+            {isDebugMode ? '42' : (diceResult || lastDiceResult.current || '')}
           </div>
-        )}
-        {(isDebugMode || diceDescription !== null) && (
           <div className={styles.description} ref={diceDescriptionRef}>
-            {isDebugMode ? 'Crítico' : (diceDescription || lastDiceDescription.current)}
+            {isDebugMode ? 'Crítico' : (diceDescription || lastDiceDescription.current || '')}
           </div>
-        )}
-      </div>
-    </PortraitDraggableResizable>
+        </div>
+      )}
+    </div>
+  </PortraitDraggableResizable>
   );
 }
