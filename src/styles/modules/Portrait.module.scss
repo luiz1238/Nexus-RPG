@@ -77,11 +77,10 @@ $glow-purple: rgba(138, 43, 226, 0.8);
   }
 }
 
-.diceContainerInner {
-  position: relative;
-  width: 100%;
-  height: 100%;
-}
+  .diceContainerInner {
+    position: relative;
+    display: inline-block;
+  }
 
   .dice {
     width: 100%;
@@ -94,22 +93,22 @@ $glow-purple: rgba(138, 43, 226, 0.8);
     filter: drop-shadow(0 0 15px rgba(138, 43, 226, 0.4));
   }
 
-.result {
-  position: absolute;
-  top: 49%;
-  left: 50%;
-  font-size: 64px;
-  color: white;
-  text-shadow: 3px 3px 0px black, 0 0 25px $glow-purple;
-  transform: translate(-50%, -50%);
-}
+  .result {
+    position: absolute;
+    top: 45%;
+    left: 50%;
+    font-size: 64px;
+    color: white;
+    text-shadow: 3px 3px 0px black, 0 0 25px $glow-purple;
+    transform: translate(-50%, -50%);
+  }
 
-.description {
-  position: absolute;
-  top: 99%;
-  left: 50%;
-  font-size: 40px;
-  color: white;
-  text-shadow: 2px 2px 0px black, 0 0 15px $glow-purple;
-  transform: translate(-50%, -50%);
-}
+  .description {
+    position: absolute;
+    top: 85%;
+    left: 50%;
+    font-size: 40px;
+    color: white;
+    text-shadow: 2px 2px 0px black, 0 0 15px $glow-purple;
+    transform: translate(-50%, -50%);
+  }
