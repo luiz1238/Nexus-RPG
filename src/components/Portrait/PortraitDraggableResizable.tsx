@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
 import Draggable from 'react-draggable';
-import { Resizable, ResizeCallbackData } from 're-resizable';
 import { clamp } from '../../utils';
 import api from '../../utils/api';
 import useRealtime from '../../hooks/useRealtime';
@@ -8,27 +7,24 @@ import useRealtime from '../../hooks/useRealtime';
 export type LayoutData = {
   posX: number;
   posY: number;
-  width: number;
-  height: number;
+  scale: number;
   rotation: number;
   fontSize: number;
 };
 
 type Position = { x: number; y: number };
-type Size = { width: number; height: number };
 
 type Props = {
   children: React.ReactNode;
   storageKey: string;
   label: string;
   defaultPosition: Position;
-  defaultSize: Size;
+  defaultSize: { width: number; height: number };
   defaultFontSize?: number;
   layout?: LayoutData | null;
   debug?: boolean;
   zIndex?: number;
   bounds?: { left: number; top: number; right: number; bottom: number };
-  lockAspectRatio?: boolean;
   playerId: number;
 };
 
@@ -45,11 +41,10 @@ export default function PortraitDraggableResizable({
   debug = false,
   zIndex = 1,
   bounds,
-  lockAspectRatio = false,
   playerId,
 }: Props) {
   const [position, setPosition] = useState<Position>(defaultPosition);
-  const [size, setSize] = useState<Size>(defaultSize);
+  const [scale, setScale] = useState(1);
   const [rotation, setRotation] = useState(0);
   const [loaded, setLoaded] = useState(false);
   const saveTimeout = useRef<NodeJS.Timeout | null>(null);
@@ -58,8 +53,8 @@ export default function PortraitDraggableResizable({
   useEffect(() => {
     if (layout) {
       setPosition({ x: layout.posX, y: layout.posY });
-      setSize({ width: layout.width, height: layout.height });
-      setRotation(layout.rotation);
+      setScale(layout.scale || 1);
+      setRotation(layout.rotation || 0);
     }
     setLoaded(true);
   }, [layout]);
@@ -69,82 +64,78 @@ export default function PortraitDraggableResizable({
       if (payload.playerId !== playerId) return;
       if (payload.element !== storageKey) return;
       setPosition({ x: payload.posX, y: payload.posY });
-      setSize({ width: payload.width, height: payload.height });
-      setRotation(payload.rotation);
+      setScale(payload.scale || 1);
+      setRotation(payload.rotation || 0);
     });
     return () => { unsub?.(); };
   }, [on, playerId, storageKey]);
 
-  function persist(pos: Position, sz: Size, rot: number) {
+  function persist(pos: Position, sc: number, rot: number) {
     if (saveTimeout.current) clearTimeout(saveTimeout.current);
-    const effectiveFontSize = Math.round(defaultFontSize * (sz.height / defaultSize.height));
+    const effectiveFontSize = Math.round(defaultFontSize * sc);
     saveTimeout.current = setTimeout(() => {
       api.post('/sheet/player/layout', {
         element: storageKey,
         playerId,
         posX: pos.x,
         posY: pos.y,
-        width: sz.width,
-        height: sz.height,
+        scale: sc,
         rotation: rot,
         fontSize: effectiveFontSize,
-      }).catch(() => {});
-    }, 300);
+      }).catch(console.error);
+    }, 500);
   }
 
   function onDragStop(_e: any, data: { x: number; y: number }) {
     const b = bounds || { left: 0, top: 0, right: CANVAS.width, bottom: CANVAS.height };
-    const x = clamp(data.x, b.left, b.right - size.width);
-    const y = clamp(data.y, b.top, b.bottom - size.height);
+    const maxX = b.right - defaultSize.width * scale;
+    const maxY = b.bottom - defaultSize.height * scale;
+    const x = clamp(data.x, b.left, maxX);
+    const y = clamp(data.y, b.top, maxY);
     const pos = { x, y };
     setPosition(pos);
-    persist(pos, size, rotation);
+    persist(pos, scale, rotation);
   }
 
-  function onResizeStop(_e: any, _dir: any, ref: HTMLElement) {
-    const w = parseFloat(ref.style.width) || size.width;
-    const h = parseFloat(ref.style.height) || size.height;
-    const sz = { width: Math.round(w), height: Math.round(h) };
-    setSize(sz);
-    persist(position, sz, rotation);
+  function onScaleChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const sc = parseInt(e.target.value) / 100;
+    setScale(sc);
+    persist(position, sc, rotation);
   }
 
   function onRotationChange(e: React.ChangeEvent<HTMLInputElement>) {
     const rot = parseInt(e.target.value) || 0;
     setRotation(rot);
-    persist(position, size, rot);
+    persist(position, scale, rot);
   }
 
   if (!loaded) return null;
 
-  const scaleX = size.width / defaultSize.width;
-  const scaleY = size.height / defaultSize.height;
-  const effectiveFontSize = Math.round(defaultFontSize * scaleY);
+  const effectiveFontSize = Math.round(defaultFontSize * scale);
 
   const contentDiv = (
     <div style={{
       width: defaultSize.width,
       height: defaultSize.height,
-      transform: `scale(${scaleX}, ${scaleY})`,
+      transform: `scale(${scale})`,
       transformOrigin: 'top left',
     }}>
       {children}
     </div>
   );
 
-  const wrapperStyle: React.CSSProperties = {
-    position: 'absolute',
-    left: position.x,
-    top: position.y,
-    width: size.width,
-    height: size.height,
-    zIndex,
-    transform: rotation ? `rotate(${rotation}deg)` : undefined,
-    overflow: 'hidden',
-  };
-
   if (!debug) {
-    return <div style={wrapperStyle}>{contentDiv}</div>;
+    return (
+      <div style={{
+        position: 'absolute',
+        left: position.x,
+        top: position.y,
+        transform: rotation ? `rotate(${rotation}deg)` : undefined,
+        zIndex,
+      }}>
+        {contentDiv}
+      </div>
+    );
   }
 
   return (
@@ -154,7 +145,12 @@ export default function PortraitDraggableResizable({
       bounds={bounds || { left: 0, top: 0, right: CANVAS.width, bottom: CANVAS.height }}
       handle=".portrait-drag-handle"
     >
-      <div style={{ position: 'absolute', zIndex }}>
+      <div style={{
+        position: 'absolute',
+        zIndex,
+        transform: rotation ? `rotate(${rotation}deg)` : undefined,
+        transformOrigin: 'center center',
+      }}>
         <div
           className="portrait-drag-handle"
           style={{
@@ -177,41 +173,46 @@ export default function PortraitDraggableResizable({
         <div style={{
           width: 200,
           display: 'flex',
-          alignItems: 'center',
-          gap: 4,
+          flexDirection: 'column',
+          gap: 2,
           marginBottom: 4,
           fontSize: 10,
           color: '#c4a7e7',
-          flexWrap: 'wrap',
         }}>
-          <span>Rot:</span>
-          <input
-            type="range"
-            min={-180}
-            max={180}
-            value={rotation}
-            onChange={onRotationChange}
-            style={{ width: 70, accentColor: '#8a2be2' }}
-          />
-          <span>{rotation}°</span>
-          <span style={{ marginLeft: 4 }}>≈{effectiveFontSize}px</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            <span style={{ width: 24 }}>Rot</span>
+            <input
+              type="range"
+              min={-180}
+              max={180}
+              value={rotation}
+              onChange={onRotationChange}
+              style={{ width: 100, accentColor: '#8a2be2' }}
+            />
+            <span style={{ width: 36 }}>{rotation}°</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            <span style={{ width: 24 }}>Esc</span>
+            <input
+              type="range"
+              min={10}
+              max={300}
+              value={Math.round(scale * 100)}
+              onChange={onScaleChange}
+              style={{ width: 100, accentColor: '#8a2be2' }}
+            />
+            <span style={{ width: 36 }}>{Math.round(scale * 100)}%</span>
+          </div>
         </div>
-        <Resizable
-          size={size}
-          onResizeStop={onResizeStop}
-          enable={{
-            top: true, bottom: true, left: true, right: true,
-            topRight: true, bottomRight: true, bottomLeft: true, topLeft: true,
-          }}
-          lockAspectRatio={lockAspectRatio}
-          style={{
-            border: '2px dashed rgba(138,43,226,0.6)',
-            borderRadius: 4,
-            overflow: 'hidden',
-          }}
-        >
+        <div style={{
+          width: defaultSize.width * scale,
+          height: defaultSize.height * scale,
+          border: '2px dashed rgba(138,43,226,0.6)',
+          borderRadius: 4,
+          overflow: 'hidden',
+        }}>
           {contentDiv}
-        </Resizable>
+        </div>
       </div>
     </Draggable>
   );

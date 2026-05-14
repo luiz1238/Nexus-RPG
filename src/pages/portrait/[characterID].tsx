@@ -127,7 +127,7 @@ export async function getServerSideProps(ctx: GetServerSidePropsContext) {
           select: { value: true, attribute_status_id: true },
         },
         PortraitLayouts: {
-          select: { element: true, posX: true, posY: true, width: true, height: true, rotation: true, fontSize: true },
+          select: { element: true, posX: true, posY: true, scale: true, rotation: true, fontSize: true },
         },
       },
     }),
@@ -156,8 +156,7 @@ export async function getServerSideProps(ctx: GetServerSidePropsContext) {
     layouts[l.element] = {
       posX: l.posX,
       posY: l.posY,
-      width: l.width,
-      height: l.height,
+      scale: l.scale,
       rotation: l.rotation,
       fontSize: l.fontSize,
     };

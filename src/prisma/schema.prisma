@@ -316,8 +316,7 @@ model PortraitLayout {
   element String
   posX Float @default(0)
   posY Float @default(0)
-  width Float @default(200)
-  height Float @default(200)
+  scale Float @default(1)
   rotation Float @default(0)
   fontSize Float @default(48)
 

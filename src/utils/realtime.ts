@@ -87,8 +87,7 @@ export interface BroadcastPayloads {
     element: string;
     posX: number;
     posY: number;
-    width: number;
-    height: number;
+    scale: number;
     rotation: number;
     fontSize: number;
   };

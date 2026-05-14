@@ -1,6 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import prisma from '../../../../utils/database';
-import { sessionAPI } from '../../../../utils/session';
 import { broadcast } from '../../../../utils/broadcast';
 
 type LayoutElement = {
@@ -8,16 +7,15 @@ type LayoutElement = {
   playerId?: number;
   posX: number;
   posY: number;
-  width: number;
-  height: number;
+  scale: number;
   rotation: number;
   fontSize: number;
 };
 
 async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method === 'GET') {
-    const playerID = parseInt(req.query.playerID as string) || req.session.player?.id;
-    if (!playerID) { res.status(401).end(); return; }
+    const playerID = parseInt(req.query.playerID as string);
+    if (!playerID) { res.status(400).end(); return; }
 
     const layouts = await prisma.portraitLayout.findMany({
       where: { player_id: playerID },
@@ -28,8 +26,8 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
   }
 
   if (req.method === 'POST') {
-    const { element, posX, posY, width, height, rotation, fontSize }: LayoutElement = req.body;
-    const playerId = req.session.player?.id || parseInt(req.body.playerId as any);
+    const { element, posX, posY, scale, rotation, fontSize }: LayoutElement = req.body;
+    const playerId = parseInt(req.body.playerId);
 
     if (!playerId || !element) { res.status(400).end(); return; }
 
@@ -42,16 +40,14 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         element,
         posX: posX ?? 0,
         posY: posY ?? 0,
-        width: width ?? 200,
-        height: height ?? 200,
+        scale: scale ?? 1,
         rotation: rotation ?? 0,
         fontSize: fontSize ?? 48,
       },
       update: {
         posX: posX ?? 0,
         posY: posY ?? 0,
-        width: width ?? 200,
-        height: height ?? 200,
+        scale: scale ?? 1,
         rotation: rotation ?? 0,
         fontSize: fontSize ?? 48,
       },
@@ -62,8 +58,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       element,
       posX: layout.posX,
       posY: layout.posY,
-      width: layout.width,
-      height: layout.height,
+      scale: layout.scale,
       rotation: layout.rotation,
       fontSize: layout.fontSize,
     });
@@ -75,4 +70,4 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
   res.status(404).end();
 }
 
-export default sessionAPI(handler);
+export default handler;

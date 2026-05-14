@@ -97,11 +97,9 @@ export default function PortraitAvatar(props: {
       label="Avatar"
       defaultPosition={{ x: 0, y: 0 }}
       defaultSize={{ width: 420, height: 600 }}
-      defaultFontSize={1}
       layout={props.layout}
       debug={props.debug}
       zIndex={1}
-      lockAspectRatio
       playerId={props.playerId}
     >
       <Fade in={showAvatar || !!props.debug}>
