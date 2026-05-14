@@ -29,6 +29,7 @@ type Props = {
 };
 
 const CANVAS = { width: 800, height: 800 };
+const EDIT_GRACE_MS = 1500;
 
 export default function PortraitDraggableResizable({
   children,
@@ -48,6 +49,8 @@ export default function PortraitDraggableResizable({
   const [rotation, setRotation] = useState(0);
   const [loaded, setLoaded] = useState(false);
   const saveTimeout = useRef<NodeJS.Timeout | null>(null);
+  const editTimeout = useRef<NodeJS.Timeout | null>(null);
+  const isEditing = useRef(false);
   const { on } = useRealtime();
 
   useEffect(() => {
@@ -63,6 +66,7 @@ export default function PortraitDraggableResizable({
     const unsub = on('portraitLayoutChange', (payload) => {
       if (payload.playerId !== playerId) return;
       if (payload.element !== storageKey) return;
+      if (isEditing.current) return;
       setPosition({ x: payload.posX, y: payload.posY });
       setScale(payload.scale || 1);
       setRotation(payload.rotation || 0);
@@ -70,7 +74,16 @@ export default function PortraitDraggableResizable({
     return () => { unsub?.(); };
   }, [on, playerId, storageKey]);
 
+  function markEditing() {
+    isEditing.current = true;
+    if (editTimeout.current) clearTimeout(editTimeout.current);
+    editTimeout.current = setTimeout(() => {
+      isEditing.current = false;
+    }, EDIT_GRACE_MS);
+  }
+
   function persist(pos: Position, sc: number, rot: number) {
+    markEditing();
     if (saveTimeout.current) clearTimeout(saveTimeout.current);
     const effectiveFontSize = Math.round(defaultFontSize * sc);
     saveTimeout.current = setTimeout(() => {
@@ -98,31 +111,33 @@ export default function PortraitDraggableResizable({
   }
 
   function onScaleChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const sc = parseInt(e.target.value) / 100;
+    const sc = Number(e.target.value) / 100;
     setScale(sc);
     persist(position, sc, rotation);
   }
 
   function onRotationChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const rot = parseInt(e.target.value) || 0;
+    const rot = Number(e.target.value) || 0;
     setRotation(rot);
     persist(position, scale, rot);
   }
 
+  function resetToDefault() {
+    const pos = defaultPosition;
+    setPosition(pos);
+    setScale(1);
+    setRotation(0);
+    persist(pos, 1, 0);
+  }
+
   if (!loaded) return null;
 
-  const effectiveFontSize = Math.round(defaultFontSize * scale);
-
-  const contentDiv = (
-    <div style={{
-      width: defaultSize.width,
-      height: defaultSize.height,
-      transform: `scale(${scale})`,
-      transformOrigin: 'top left',
-    }}>
-      {children}
-    </div>
-  );
+  const contentWrapperStyle: React.CSSProperties = {
+    width: defaultSize.width,
+    height: defaultSize.height,
+    transform: `rotate(${rotation}deg) scale(${scale})`,
+    transformOrigin: 'top left',
+  };
 
   if (!debug) {
     return (
@@ -130,10 +145,11 @@ export default function PortraitDraggableResizable({
         position: 'absolute',
         left: position.x,
         top: position.y,
-        transform: rotation ? `rotate(${rotation}deg)` : undefined,
         zIndex,
       }}>
-        {contentDiv}
+        <div style={contentWrapperStyle}>
+          {children}
+        </div>
       </div>
     );
   }
@@ -148,8 +164,6 @@ export default function PortraitDraggableResizable({
       <div style={{
         position: 'absolute',
         zIndex,
-        transform: rotation ? `rotate(${rotation}deg)` : undefined,
-        transformOrigin: 'center center',
       }}>
         <div
           className="portrait-drag-handle"
@@ -203,15 +217,30 @@ export default function PortraitDraggableResizable({
             />
             <span style={{ width: 36 }}>{Math.round(scale * 100)}%</span>
           </div>
+          <button
+            onClick={resetToDefault}
+            style={{
+              width: '100%',
+              padding: '2px 0',
+              background: 'rgba(138,43,226,0.35)',
+              border: '1px solid rgba(138,43,226,0.6)',
+              borderRadius: 3,
+              color: '#c4a7e7',
+              cursor: 'pointer',
+              fontSize: 10,
+            }}
+          >
+            Resetar
+          </button>
         </div>
         <div style={{
-          width: defaultSize.width * scale,
-          height: defaultSize.height * scale,
           border: '2px dashed rgba(138,43,226,0.6)',
           borderRadius: 4,
-          overflow: 'hidden',
+          display: 'inline-block',
         }}>
-          {contentDiv}
+          <div style={contentWrapperStyle}>
+            {children}
+          </div>
         </div>
       </div>
     </Draggable>
