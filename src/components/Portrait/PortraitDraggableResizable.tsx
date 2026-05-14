@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import Draggable from 'react-draggable';
 import { clamp } from '../../utils';
 import api from '../../utils/api';
@@ -24,12 +24,42 @@ type Props = {
   layout?: LayoutData | null;
   debug?: boolean;
   zIndex?: number;
-  bounds?: { left: number; top: number; right: number; bottom: number };
   playerId: number;
 };
 
 const CANVAS = { width: 800, height: 800 };
 const EDIT_GRACE_MS = 1500;
+const CONTROLS_WIDTH = 200;
+const CONTROLS_HEIGHT = 60;
+
+type ResetFn = () => void;
+const PortraitResetContext = createContext<ResetFn | null>(null);
+
+export function PortraitResetProvider({ children }: { children: React.ReactNode }) {
+  const resetFns = useRef<Set<ResetFn>>(new Set());
+  const register = useCallback((fn: ResetFn) => {
+    resetFns.current.add(fn);
+    return () => { resetFns.current.delete(fn); };
+  }, []);
+  const resetAll = useCallback(() => {
+    resetFns.current.forEach((fn) => fn());
+  }, []);
+  return (
+    <PortraitResetContext.Provider value={resetAll}>
+      <PortraitResetRegisterContext.Provider value={register}>
+        {children}
+      </PortraitResetRegisterContext.Provider>
+    </PortraitResetContext.Provider>
+  );
+}
+
+const PortraitResetRegisterContext = createContext<((fn: ResetFn) => () => void) | null>(null);
+
+export function usePortraitReset() {
+  const reset = useContext(PortraitResetContext);
+  if (!reset) throw new Error('usePortraitReset must be used within PortraitResetProvider');
+  return reset;
+}
 
 export default function PortraitDraggableResizable({
   children,
@@ -41,7 +71,6 @@ export default function PortraitDraggableResizable({
   layout,
   debug = false,
   zIndex = 1,
-  bounds,
   playerId,
 }: Props) {
   const [position, setPosition] = useState<Position>(defaultPosition);
@@ -52,6 +81,7 @@ export default function PortraitDraggableResizable({
   const editTimeout = useRef<NodeJS.Timeout | null>(null);
   const isEditing = useRef(false);
   const { on } = useRealtime();
+  const registerReset = useContext(PortraitResetRegisterContext);
 
   useEffect(() => {
     if (layout) {
@@ -73,6 +103,11 @@ export default function PortraitDraggableResizable({
     });
     return () => { unsub?.(); };
   }, [on, playerId, storageKey]);
+
+  useEffect(() => {
+    if (!registerReset) return;
+    return registerReset(resetToDefault);
+  }, [registerReset]);
 
   function markEditing() {
     isEditing.current = true;
@@ -100,11 +135,10 @@ export default function PortraitDraggableResizable({
   }
 
   function onDragStop(_e: any, data: { x: number; y: number }) {
-    const b = bounds || { left: 0, top: 0, right: CANVAS.width, bottom: CANVAS.height };
-    const maxX = b.right - defaultSize.width * scale;
-    const maxY = b.bottom - defaultSize.height * scale;
-    const x = clamp(data.x, b.left, maxX);
-    const y = clamp(data.y, b.top, maxY);
+    const maxRight = CANVAS.width - (debug ? CONTROLS_WIDTH : defaultSize.width * scale);
+    const maxBottom = CANVAS.height - (debug ? CONTROLS_HEIGHT : defaultSize.height * scale);
+    const x = clamp(data.x, 0, maxRight);
+    const y = clamp(data.y, 0, maxBottom);
     const pos = { x, y };
     setPosition(pos);
     persist(pos, scale, rotation);
@@ -139,6 +173,13 @@ export default function PortraitDraggableResizable({
     transformOrigin: 'top left',
   };
 
+  const dragBounds = {
+    left: 0,
+    top: 0,
+    right: CANVAS.width - CONTROLS_WIDTH,
+    bottom: CANVAS.height - CONTROLS_HEIGHT,
+  };
+
   if (!debug) {
     return (
       <div style={{
@@ -158,7 +199,7 @@ export default function PortraitDraggableResizable({
     <Draggable
       position={position}
       onStop={onDragStop}
-      bounds={bounds || { left: 0, top: 0, right: CANVAS.width, bottom: CANVAS.height }}
+      bounds={dragBounds}
       handle=".portrait-drag-handle"
     >
       <div style={{
@@ -168,7 +209,7 @@ export default function PortraitDraggableResizable({
         <div
           className="portrait-drag-handle"
           style={{
-            width: 200,
+            width: CONTROLS_WIDTH,
             height: 24,
             cursor: 'move',
             background: 'rgba(138,43,226,0.5)',
@@ -185,7 +226,7 @@ export default function PortraitDraggableResizable({
           {label}
         </div>
         <div style={{
-          width: 200,
+          width: CONTROLS_WIDTH,
           display: 'flex',
           flexDirection: 'column',
           gap: 2,
@@ -217,21 +258,6 @@ export default function PortraitDraggableResizable({
             />
             <span style={{ width: 36 }}>{Math.round(scale * 100)}%</span>
           </div>
-          <button
-            onClick={resetToDefault}
-            style={{
-              width: '100%',
-              padding: '2px 0',
-              background: 'rgba(138,43,226,0.35)',
-              border: '1px solid rgba(138,43,226,0.6)',
-              borderRadius: 3,
-              color: '#c4a7e7',
-              cursor: 'pointer',
-              fontSize: 10,
-            }}
-          >
-            Resetar
-          </button>
         </div>
         <div style={{
           border: '2px dashed rgba(138,43,226,0.6)',

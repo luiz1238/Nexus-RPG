@@ -11,7 +11,7 @@ import PortraitAvatarContainer from '../../components/Portrait/PortraitAvatarCon
 import PortraitDiceContainer from '../../components/Portrait/PortraitDiceContainer';
 import PortraitEnvironmentalContainer from '../../components/Portrait/PortraitEnvironmentalContainer';
 import PortraitSideAttributeContainer from '../../components/Portrait/PortraitSideAttributeContainer';
-import type { LayoutData } from '../../components/Portrait/PortraitDraggableResizable';
+import PortraitDraggableResizable, { type LayoutData, PortraitResetProvider, usePortraitReset } from '../../components/Portrait/PortraitDraggableResizable';
 import useRealtime from '../../hooks/useRealtime';
 import styles from '../../styles/modules/Portrait.module.scss';
 import type { Environment, PortraitFontConfig } from '../../utils/config';
@@ -55,16 +55,32 @@ function CharacterPortrait(props: PageProps) {
   const [showDice, setShowDice] = useState(false);
 
   return (
+    <PortraitResetProvider>
+      <PortraitInner
+        {...props}
+        debug={debug}
+        setDebug={setDebug}
+        showDice={showDice}
+        setShowDice={setShowDice}
+      />
+    </PortraitResetProvider>
+  );
+}
+
+function PortraitInner(props: PageProps & { debug: boolean; setDebug: (v: boolean) => void; showDice: boolean; setShowDice: (v: boolean) => void }) {
+  const resetAll = usePortraitReset();
+
+  return (
     <div className={styles.portrait}>
       <PortraitAvatarContainer
         playerId={props.playerId}
         attributeStatus={props.attributeStatus}
-        debug={debug}
+        debug={props.debug}
         layout={props.layouts.avatar}
       />
       <PortraitSideAttributeContainer
         sideAttribute={props.sideAttribute}
-        debug={debug}
+        debug={props.debug}
         playerId={props.playerId}
         layout={props.layouts['side-attribute']}
       />
@@ -73,7 +89,7 @@ function CharacterPortrait(props: PageProps) {
         environment={props.environment}
         playerId={props.playerId}
         playerName={props.playerName}
-        debug={debug}
+        debug={props.debug}
         nameOrientation={props.nameOrientation}
         attributesLayout={props.layouts.attributes}
         nameLayout={props.layouts.name}
@@ -82,19 +98,28 @@ function CharacterPortrait(props: PageProps) {
         playerId={props.playerId}
         color={props.diceColor}
         showDiceRoll={props.showDiceRoll}
-        showDice={showDice}
-        onShowDice={() => setShowDice(true)}
-        onHideDice={() => setShowDice(false)}
-        debug={debug}
+        showDice={props.showDice}
+        onShowDice={() => props.setShowDice(true)}
+        onHideDice={() => props.setShowDice(false)}
+        debug={props.debug}
         layout={props.layouts.dice}
       />
       <div className={styles.editor}>
         <Button
           variant='secondary'
           title='Desativa o controle do ambiente pelo mestre.'
-          onClick={() => setDebug((e) => !e)}>
-          {debug ? 'Desativar' : 'Ativar'} Editor
+          onClick={() => props.setDebug((e: boolean) => !e)}>
+          {props.debug ? 'Desativar' : 'Ativar'} Editor
         </Button>
+        {props.debug && (
+          <Button
+            variant='danger'
+            className='ms-2'
+            onClick={resetAll}
+          >
+            Resetar Tudo
+          </Button>
+        )}
       </div>
     </div>
   );
