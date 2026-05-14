@@ -169,6 +169,7 @@ export default function PortraitDraggableResizable({
   const contentWrapperStyle: React.CSSProperties = {
     width: defaultSize.width,
     height: defaultSize.height,
+    position: 'relative',
     transform: `rotate(${rotation}deg) scale(${scale})`,
     transformOrigin: 'top left',
   };

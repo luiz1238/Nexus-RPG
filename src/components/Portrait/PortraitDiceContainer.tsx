@@ -121,6 +121,8 @@ export default function PortraitDiceContainer(props: {
     return () => { unsub1?.(); unsub2?.(); };
   }, [props.showDiceRoll]);
 
+  const isDebugMode = !!props.debug;
+
   return (
     <PortraitDraggableResizable
       storageKey="dice"
@@ -136,20 +138,22 @@ export default function PortraitDiceContainer(props: {
       <div className={styles.diceContainerInner}>
         <video
           muted
-          className={`popout${props.showDice ? ' show' : ''} ${styles.dice}`}
-          ref={diceVideo}>
+          className={`${isDebugMode ? styles.diceDebug : `popout${props.showDice ? ' show' : ''} ${styles.dice}`}`}
+          ref={diceVideo}
+          preload="auto"
+        >
           <source src='/dice_animation.webm' />
         </video>
-        <Fade in={diceResult !== null}>
+        {(isDebugMode || diceResult !== null) && (
           <div className={styles.result} ref={diceResultRef}>
-            {diceResult || lastDiceResult.current}
+            {isDebugMode ? '42' : (diceResult || lastDiceResult.current)}
           </div>
-        </Fade>
-        <Fade in={diceDescription !== null}>
+        )}
+        {(isDebugMode || diceDescription !== null) && (
           <div className={styles.description} ref={diceDescriptionRef}>
-            {diceDescription || lastDiceDescription.current}
+            {isDebugMode ? 'Crítico' : (diceDescription || lastDiceDescription.current)}
           </div>
-        </Fade>
+        )}
       </div>
     </PortraitDraggableResizable>
   );

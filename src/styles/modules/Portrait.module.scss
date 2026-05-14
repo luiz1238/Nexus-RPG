@@ -83,10 +83,16 @@ $glow-purple: rgba(138, 43, 226, 0.8);
   height: 100%;
 }
 
-.dice {
-  width: 100%;
-  filter: drop-shadow(0 0 15px rgba(138, 43, 226, 0.4));
-}
+  .dice {
+    width: 100%;
+    filter: drop-shadow(0 0 15px rgba(138, 43, 226, 0.4));
+  }
+
+  .diceDebug {
+    width: 100%;
+    opacity: 0.6;
+    filter: drop-shadow(0 0 15px rgba(138, 43, 226, 0.4));
+  }
 
 .result {
   position: absolute;
