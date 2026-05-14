@@ -34,9 +34,13 @@ const CONTROLS_HEIGHT = 60;
 
 type ResetFn = () => void;
 const PortraitResetContext = createContext<ResetFn | null>(null);
+const PortraitResetRegisterContext = createContext<((fn: ResetFn) => () => void) | null>(null);
+const PortraitFocusContext = createContext<(key: string) => void>(() => {});
+const PortraitFocusedKeyContext = createContext<string>('');
 
 export function PortraitResetProvider({ children }: { children: React.ReactNode }) {
   const resetFns = useRef<Set<ResetFn>>(new Set());
+  const [focusedKey, setFocusedKey] = useState('');
   const register = useCallback((fn: ResetFn) => {
     resetFns.current.add(fn);
     return () => { resetFns.current.delete(fn); };
@@ -44,16 +48,21 @@ export function PortraitResetProvider({ children }: { children: React.ReactNode 
   const resetAll = useCallback(() => {
     resetFns.current.forEach((fn) => fn());
   }, []);
+  const focus = useCallback((key: string) => {
+    setFocusedKey(key);
+  }, []);
   return (
-    <PortraitResetContext.Provider value={resetAll}>
-      <PortraitResetRegisterContext.Provider value={register}>
-        {children}
-      </PortraitResetRegisterContext.Provider>
-    </PortraitResetContext.Provider>
+    <PortraitFocusContext.Provider value={focus}>
+      <PortraitFocusedKeyContext.Provider value={focusedKey}>
+        <PortraitResetContext.Provider value={resetAll}>
+          <PortraitResetRegisterContext.Provider value={register}>
+            {children}
+          </PortraitResetRegisterContext.Provider>
+        </PortraitResetContext.Provider>
+      </PortraitFocusedKeyContext.Provider>
+    </PortraitFocusContext.Provider>
   );
 }
-
-const PortraitResetRegisterContext = createContext<((fn: ResetFn) => () => void) | null>(null);
 
 export function usePortraitReset() {
   const reset = useContext(PortraitResetContext);
@@ -70,7 +79,7 @@ export default function PortraitDraggableResizable({
   defaultFontSize = 48,
   layout,
   debug = false,
-  zIndex = 1,
+  zIndex: baseZIndex = 1,
   playerId,
 }: Props) {
   const [position, setPosition] = useState<Position>(defaultPosition);
@@ -82,6 +91,10 @@ export default function PortraitDraggableResizable({
   const isEditing = useRef(false);
   const { on } = useRealtime();
   const registerReset = useContext(PortraitResetRegisterContext);
+  const focusElement = useContext(PortraitFocusContext);
+  const focusedKey = useContext(PortraitFocusedKeyContext);
+
+  const isFocused = focusedKey === storageKey;
 
   useEffect(() => {
     if (layout) {
@@ -167,12 +180,13 @@ export default function PortraitDraggableResizable({
   if (!loaded) return null;
 
   const contentWrapperStyle: React.CSSProperties = {
-    width: defaultSize.width,
-    height: defaultSize.height,
     position: 'relative',
+    display: 'inline-block',
     transform: `rotate(${rotation}deg) scale(${scale})`,
     transformOrigin: 'top left',
   };
+
+  const effectiveZIndex = debug ? (isFocused ? 999 : baseZIndex) : baseZIndex;
 
   const dragBounds = {
     left: 0,
@@ -187,7 +201,7 @@ export default function PortraitDraggableResizable({
         position: 'absolute',
         left: position.x,
         top: position.y,
-        zIndex,
+        zIndex: baseZIndex,
       }}>
         <div style={contentWrapperStyle}>
           {children}
@@ -203,17 +217,20 @@ export default function PortraitDraggableResizable({
       bounds={dragBounds}
       handle=".portrait-drag-handle"
     >
-      <div style={{
-        position: 'absolute',
-        zIndex,
-      }}>
+      <div
+        style={{
+          position: 'absolute',
+          zIndex: effectiveZIndex,
+        }}
+        onMouseDown={() => focusElement(storageKey)}
+      >
         <div
           className="portrait-drag-handle"
           style={{
             width: CONTROLS_WIDTH,
             height: 24,
             cursor: 'move',
-            background: 'rgba(138,43,226,0.5)',
+            background: isFocused ? 'rgba(138,43,226,0.8)' : 'rgba(138,43,226,0.5)',
             borderRadius: 4,
             marginBottom: 2,
             fontSize: 11,
@@ -261,7 +278,7 @@ export default function PortraitDraggableResizable({
           </div>
         </div>
         <div style={{
-          border: '2px dashed rgba(138,43,226,0.6)',
+          border: isFocused ? '2px solid rgba(138,43,226,0.9)' : '2px dashed rgba(138,43,226,0.6)',
           borderRadius: 4,
           display: 'inline-block',
         }}>
