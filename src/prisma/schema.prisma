@@ -33,8 +33,9 @@ model Player {
   PlayerNote            PlayerNote[]
   PlayerSpell           PlayerSpell[]
   PlayerCurrency        PlayerCurrency[]
-  PlayerAvatar          PlayerAvatar[]
-  SenderTrades          Trade[]                 @relation(name: "Sender")
+  PlayerAvatar PlayerAvatar[]
+  PortraitLayouts PortraitLayout[]
+  SenderTrades Trade[] @relation(name: "Sender")
   ReceiverTrades        Trade[]                 @relation(name: "Receiver")
 }
 
@@ -306,4 +307,19 @@ enum Role {
 enum PortraitAttribute {
   PRIMARY
   SECONDARY
+}
+
+model PortraitLayout {
+  id Int @id @default(autoincrement())
+  Player Player @relation(fields: [player_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  player_id Int
+  element String
+  posX Float @default(0)
+  posY Float @default(0)
+  width Float @default(200)
+  height Float @default(200)
+  rotation Float @default(0)
+  fontSize Float @default(48)
+
+  @@unique([player_id, element])
 }

@@ -6,6 +6,7 @@ import { sleep } from '../../utils';
 import type { DiceResponse } from '../../utils/dice';
 import { getAttributeStyle } from '../../utils/style';
 import PortraitDraggableResizable from './PortraitDraggableResizable';
+import type { LayoutData } from './PortraitDraggableResizable';
 
 export default function PortraitDiceContainer(props: {
   playerId: number;
@@ -15,6 +16,7 @@ export default function PortraitDiceContainer(props: {
   color: string;
   showDiceRoll: boolean;
   debug?: boolean;
+  layout?: LayoutData | null;
 }) {
   const diceQueue = useRef<DiceResponse[]>([]);
   const diceData = useRef<DiceResponse>();
@@ -122,30 +124,35 @@ export default function PortraitDiceContainer(props: {
   return (
     <PortraitDraggableResizable
       storageKey="dice"
+      label="Dado"
       defaultPosition={{ x: 30, y: 500 }}
       defaultSize={{ width: 360, height: 150 }}
+      defaultFontSize={64}
+      layout={props.layout}
       debug={props.debug}
       zIndex={200}
+      playerId={props.playerId}
     >
-      <div className={styles.diceContainerInner}>
-        <video
-          muted
-          className={`popout${props.showDice ? ' show' : ''} ${styles.dice}`}
-          ref={diceVideo}>
-          <source src='/dice_animation.webm' />
-
+      {(fontSize) => (
+        <div className={styles.diceContainerInner}>
+          <video
+            muted
+            className={`popout${props.showDice ? ' show' : ''} ${styles.dice}`}
+            ref={diceVideo}>
+            <source src='/dice_animation.webm' />
+          </video>
           <Fade in={diceResult !== null}>
-            <div className={styles.result} ref={diceResultRef}>
+            <div className={styles.result} ref={diceResultRef} style={{ fontSize }}>
               {diceResult || lastDiceResult.current}
             </div>
           </Fade>
           <Fade in={diceDescription !== null}>
-            <div className={styles.description} ref={diceDescriptionRef}>
+            <div className={styles.description} ref={diceDescriptionRef} style={{ fontSize: fontSize * 0.6 }}>
               {diceDescription || lastDiceDescription.current}
             </div>
           </Fade>
-        </video>
-      </div>
+        </div>
+      )}
     </PortraitDraggableResizable>
   );
 }

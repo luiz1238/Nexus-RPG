@@ -1,8 +1,8 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import useRealtime from '../../hooks/useRealtime';
 import styles from '../../styles/modules/Portrait.module.scss';
 import PortraitDraggableResizable from './PortraitDraggableResizable';
-import { getAttributeStyle } from '../../utils/style';
+import type { LayoutData } from './PortraitDraggableResizable';
 
 type PortraitSideAttribute = {
   value: number;
@@ -17,6 +17,8 @@ type PortraitSideAttribute = {
 export default function PortraitSideAttributeContainer(props: {
   sideAttribute: PortraitSideAttribute;
   debug?: boolean;
+  playerId: number;
+  layout?: LayoutData | null;
 }) {
   const [sideAttribute, setSideAttribute] = useState(props.sideAttribute);
   const { on } = useRealtime();
@@ -36,20 +38,26 @@ export default function PortraitSideAttributeContainer(props: {
   return (
     <PortraitDraggableResizable
       storageKey="side-attribute"
+      label="Atributo Secundário"
       defaultPosition={{ x: 0, y: 450 }}
       defaultSize={{ width: 200, height: 120 }}
+      defaultFontSize={68}
+      layout={props.layout}
       debug={props.debug}
       zIndex={100}
+      playerId={props.playerId}
     >
-      <div className={styles.sideContainerInner}>
-        <div className={styles.sideBackground}></div>
-        <label
-          className={`${styles.sideContent} atributo-secundario ${sideAttribute.Attribute.name}`}
-          style={{ color: `#${sideAttribute.Attribute.color}` }}
-        >
-          {sideAttribute.show ? sideAttribute.value : '?'}
-        </label>
-      </div>
+      {(fontSize) => (
+        <div className={styles.sideContainerInner}>
+          <div className={styles.sideBackground}></div>
+          <label
+            className={`${styles.sideContent} atributo-secundario ${sideAttribute.Attribute.name}`}
+            style={{ color: `#${sideAttribute.Attribute.color}`, fontSize }}
+          >
+            {sideAttribute.show ? sideAttribute.value : '?'}
+          </label>
+        </div>
+      )}
     </PortraitDraggableResizable>
   );
 }

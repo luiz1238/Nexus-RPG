@@ -5,6 +5,7 @@ import useRealtime from '../../hooks/useRealtime';
 import styles from '../../styles/modules/Portrait.module.scss';
 import api from '../../utils/api';
 import PortraitDraggableResizable from './PortraitDraggableResizable';
+import type { LayoutData } from './PortraitDraggableResizable';
 
 export type PortraitAttributeStatus = {
   value: boolean;
@@ -30,6 +31,7 @@ export default function PortraitAvatar(props: {
   attributeStatus: PortraitAttributeStatus;
   playerId: number;
   debug?: boolean;
+  layout?: LayoutData | null;
 }) {
   const [src, setSrc] = useState('#');
   const srcRef = useRef('#');
@@ -92,23 +94,29 @@ export default function PortraitAvatar(props: {
   return (
     <PortraitDraggableResizable
       storageKey="avatar"
+      label="Avatar"
       defaultPosition={{ x: 0, y: 0 }}
       defaultSize={{ width: 420, height: 600 }}
+      defaultFontSize={1}
+      layout={props.layout}
       debug={props.debug}
       zIndex={1}
       lockAspectRatio
+      playerId={props.playerId}
     >
-      <Fade in={showAvatar}>
-        <div style={{ width: '100%', height: '100%' }}>
-          <Image
-            src={src}
-            alt='Avatar'
-            onError={() => setSrc('/avatar404.png')}
-            onLoad={() => setShowAvatar(true)}
-            className={styles.avatar}
-          />
-        </div>
-      </Fade>
+      {() => (
+        <Fade in={showAvatar || !!props.debug}>
+          <div style={{ width: '100%', height: '100%', background: props.debug ? 'rgba(80,40,120,0.2)' : 'transparent' }}>
+            <Image
+              src={src}
+              alt='Avatar'
+              onError={() => setSrc('/avatar404.png')}
+              onLoad={() => setShowAvatar(true)}
+              className={styles.avatar}
+            />
+          </div>
+        </Fade>
+      )}
     </PortraitDraggableResizable>
   );
 }

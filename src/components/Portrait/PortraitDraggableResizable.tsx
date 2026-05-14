@@ -1,20 +1,35 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import Draggable from 'react-draggable';
-import { Resizable } from 're-resizable';
+import { Resizable, ResizeCallbackData } from 're-resizable';
 import { clamp } from '../../utils';
+import api from '../../utils/api';
+import useRealtime from '../../hooks/useRealtime';
+
+export type LayoutData = {
+  posX: number;
+  posY: number;
+  width: number;
+  height: number;
+  rotation: number;
+  fontSize: number;
+};
 
 type Position = { x: number; y: number };
 type Size = { width: number; height: number };
 
 type Props = {
-  children: React.ReactNode;
+  children: (fontSize: number) => React.ReactNode;
   storageKey: string;
+  label: string;
   defaultPosition: Position;
   defaultSize: Size;
+  defaultFontSize?: number;
+  layout?: LayoutData | null;
   debug?: boolean;
   zIndex?: number;
   bounds?: { left: number; top: number; right: number; bottom: number };
   lockAspectRatio?: boolean;
+  playerId: number;
 };
 
 const CANVAS = { width: 800, height: 800 };
@@ -22,30 +37,60 @@ const CANVAS = { width: 800, height: 800 };
 export default function PortraitDraggableResizable({
   children,
   storageKey,
+  label,
   defaultPosition,
   defaultSize,
+  defaultFontSize = 48,
+  layout,
   debug = false,
   zIndex = 1,
   bounds,
   lockAspectRatio = false,
+  playerId,
 }: Props) {
   const [position, setPosition] = useState<Position>(defaultPosition);
   const [size, setSize] = useState<Size>(defaultSize);
+  const [rotation, setRotation] = useState(0);
+  const [fontSize, setFontSize] = useState(defaultFontSize);
   const [loaded, setLoaded] = useState(false);
+  const saveTimeout = useRef<NodeJS.Timeout | null>(null);
+  const { on } = useRealtime();
 
   useEffect(() => {
-    try {
-      const saved = JSON.parse(localStorage.getItem(`portrait-${storageKey}`) || 'null');
-      if (saved) {
-        if (saved.position) setPosition(saved.position);
-        if (saved.size) setSize(saved.size);
-      }
-    } catch {}
+    if (layout) {
+      setPosition({ x: layout.posX, y: layout.posY });
+      setSize({ width: layout.width, height: layout.height });
+      setRotation(layout.rotation);
+      setFontSize(layout.fontSize);
+    }
     setLoaded(true);
-  }, [storageKey]);
+  }, [layout]);
 
-  function save(pos: Position, sz: Size) {
-    localStorage.setItem(`portrait-${storageKey}`, JSON.stringify({ position: pos, size: sz }));
+  useEffect(() => {
+    const unsub = on('portraitLayoutChange', (payload) => {
+      if (payload.playerId !== playerId) return;
+      if (payload.element !== storageKey) return;
+      setPosition({ x: payload.posX, y: payload.posY });
+      setSize({ width: payload.width, height: payload.height });
+      setRotation(payload.rotation);
+      setFontSize(payload.fontSize);
+    });
+    return () => { unsub?.(); };
+  }, [on, playerId, storageKey]);
+
+  function persist(pos: Position, sz: Size, rot: number, fs: number) {
+    if (saveTimeout.current) clearTimeout(saveTimeout.current);
+    saveTimeout.current = setTimeout(() => {
+      api.post('/sheet/player/layout', {
+        element: storageKey,
+        posX: pos.x,
+        posY: pos.y,
+        width: sz.width,
+        height: sz.height,
+        rotation: rot,
+        fontSize: fs,
+      }).catch(() => {});
+    }, 300);
   }
 
   function onDragStop(_e: any, data: { x: number; y: number }) {
@@ -54,15 +99,34 @@ export default function PortraitDraggableResizable({
     const y = clamp(data.y, b.top, b.bottom - size.height);
     const pos = { x, y };
     setPosition(pos);
-    save(pos, size);
+    persist(pos, size, rotation, fontSize);
   }
 
-  function onResizeStop(_e: any, _dir: any, ref: HTMLElement) {
-    const w = parseInt(ref.style.width);
-    const h = parseInt(ref.style.height);
-    const sz = { width: w, height: h };
+  function onResize(_e: any, _dir: any, _ref: HTMLElement, delta: ResizeCallbackData) {
+    const w = delta.width + size.width;
+    const h = delta.height + size.height;
+    const sz = { width: Math.round(w), height: Math.round(h) };
+    const scale = sz.height / defaultSize.height;
+    const fs = Math.round(defaultFontSize * scale);
     setSize(sz);
-    save(position, sz);
+    setFontSize(fs);
+  }
+
+  function onResizeStop(_e: any, _dir: any, _ref: HTMLElement, delta: ResizeCallbackData) {
+    const w = delta.width + size.width;
+    const h = delta.height + size.height;
+    const sz = { width: Math.round(w), height: Math.round(h) };
+    const scale = sz.height / defaultSize.height;
+    const fs = Math.round(defaultFontSize * scale);
+    setSize(sz);
+    setFontSize(fs);
+    persist(position, sz, rotation, fs);
+  }
+
+  function onRotationChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const rot = parseInt(e.target.value) || 0;
+    setRotation(rot);
+    persist(position, size, rot, fontSize);
   }
 
   if (!loaded) return null;
@@ -74,12 +138,14 @@ export default function PortraitDraggableResizable({
     width: size.width,
     height: size.height,
     zIndex,
+    transform: rotation ? `rotate(${rotation}deg)` : undefined,
+    overflow: 'hidden',
   };
 
   if (!debug) {
     return (
       <div style={wrapperStyle}>
-        {children}
+        {children(fontSize)}
       </div>
     );
   }
@@ -96,21 +162,37 @@ export default function PortraitDraggableResizable({
           className="portrait-drag-handle"
           style={{
             width: size.width,
-            height: 20,
+            height: 24,
             cursor: 'move',
-            background: 'rgba(138,43,226,0.3)',
+            background: 'rgba(138,43,226,0.5)',
             borderRadius: 4,
             marginBottom: 2,
             fontSize: 11,
-            color: '#c4a7e7',
+            color: '#fff',
             textAlign: 'center',
-            lineHeight: '20px',
+            lineHeight: '24px',
+            fontWeight: 'bold',
+            userSelect: 'none',
           }}
         >
-          arrastar
+          {label}
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4, fontSize: 11, color: '#c4a7e7' }}>
+          <span>Rot:</span>
+          <input
+            type="range"
+            min={-180}
+            max={180}
+            value={rotation}
+            onChange={onRotationChange}
+            style={{ width: 100, accentColor: '#8a2be2' }}
+          />
+          <span>{rotation}°</span>
+          <span style={{ marginLeft: 8 }}>Fonte: {fontSize}px</span>
         </div>
         <Resizable
           size={size}
+          onResize={onResize}
           onResizeStop={onResizeStop}
           enable={{
             top: true, bottom: true, left: true, right: true,
@@ -120,9 +202,11 @@ export default function PortraitDraggableResizable({
           style={{
             border: '2px dashed rgba(138,43,226,0.6)',
             borderRadius: 4,
+            transform: rotation ? `rotate(${rotation}deg)` : undefined,
+            overflow: 'hidden',
           }}
         >
-          {children}
+          {children(fontSize)}
         </Resizable>
       </div>
     </Draggable>

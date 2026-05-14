@@ -82,6 +82,16 @@ export interface BroadcastPayloads {
   diceResultAdmin: { playerId: number; results: DiceResponse[]; dices: DiceRequest | DiceRequest[] };
   playerTradeRequest: { type: TradeType; tradeId: number; receiverObjectId: number | null; senderName: string; senderObjectName: string };
   playerTradeResponse: { accept: boolean; object?: TradeObject };
+  portraitLayoutChange: {
+    playerId: number;
+    element: string;
+    posX: number;
+    posY: number;
+    width: number;
+    height: number;
+    rotation: number;
+    fontSize: number;
+  };
 }
 
 export type BroadcastEventName = keyof BroadcastPayloads;

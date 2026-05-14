@@ -11,6 +11,7 @@ import PortraitAvatarContainer from '../../components/Portrait/PortraitAvatarCon
 import PortraitDiceContainer from '../../components/Portrait/PortraitDiceContainer';
 import PortraitEnvironmentalContainer from '../../components/Portrait/PortraitEnvironmentalContainer';
 import PortraitSideAttributeContainer from '../../components/Portrait/PortraitSideAttributeContainer';
+import type { LayoutData } from '../../components/Portrait/PortraitDraggableResizable';
 import useRealtime from '../../hooks/useRealtime';
 import styles from '../../styles/modules/Portrait.module.scss';
 import type { Environment, PortraitFontConfig } from '../../utils/config';
@@ -59,10 +60,13 @@ function CharacterPortrait(props: PageProps) {
         playerId={props.playerId}
         attributeStatus={props.attributeStatus}
         debug={debug}
+        layout={props.layouts.avatar}
       />
       <PortraitSideAttributeContainer
         sideAttribute={props.sideAttribute}
         debug={debug}
+        playerId={props.playerId}
+        layout={props.layouts['side-attribute']}
       />
       <PortraitEnvironmentalContainer
         attributes={props.attributes}
@@ -71,6 +75,8 @@ function CharacterPortrait(props: PageProps) {
         playerName={props.playerName}
         debug={debug}
         nameOrientation={props.nameOrientation}
+        attributesLayout={props.layouts.attributes}
+        nameLayout={props.layouts.name}
       />
       <PortraitDiceContainer
         playerId={props.playerId}
@@ -80,6 +86,7 @@ function CharacterPortrait(props: PageProps) {
         onShowDice={() => setShowDice(true)}
         onHideDice={() => setShowDice(false)}
         debug={debug}
+        layout={props.layouts.dice}
       />
       <div className={styles.editor}>
         <Button
@@ -119,6 +126,9 @@ export async function getServerSideProps(ctx: GetServerSidePropsContext) {
         PlayerAttributeStatus: {
           select: { value: true, attribute_status_id: true },
         },
+        PortraitLayouts: {
+          select: { element: true, posX: true, posY: true, width: true, height: true, rotation: true, fontSize: true },
+        },
       },
     }),
     prisma.config.findUnique({ where: { name: 'portrait_font' } }),
@@ -137,8 +147,21 @@ export async function getServerSideProps(ctx: GetServerSidePropsContext) {
         diceColor,
         nameOrientation,
         showDiceRoll,
+        layouts: {},
       },
     };
+
+  const layouts: Record<string, LayoutData> = {};
+  for (const l of results[1].PortraitLayouts) {
+    layouts[l.element] = {
+      posX: l.posX,
+      posY: l.posY,
+      width: l.width,
+      height: l.height,
+      rotation: l.rotation,
+      fontSize: l.fontSize,
+    };
+  }
 
   const attributes = results[1].PlayerAttributes.filter(
     (attr) => attr.Attribute.portrait === 'PRIMARY'
@@ -159,6 +182,7 @@ export async function getServerSideProps(ctx: GetServerSidePropsContext) {
       diceColor,
       nameOrientation,
       showDiceRoll,
+      layouts,
     },
   };
 }
