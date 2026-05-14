@@ -47,17 +47,15 @@ export default function PortraitSideAttributeContainer(props: {
       zIndex={100}
       playerId={props.playerId}
     >
-      {(fontSize) => (
-        <div className={styles.sideContainerInner}>
-          <div className={styles.sideBackground}></div>
-          <label
-            className={`${styles.sideContent} atributo-secundario ${sideAttribute.Attribute.name}`}
-            style={{ color: `#${sideAttribute.Attribute.color}`, fontSize }}
-          >
-            {sideAttribute.show ? sideAttribute.value : '?'}
-          </label>
-        </div>
-      )}
+      <div className={styles.sideContainerInner}>
+        <div className={styles.sideBackground}></div>
+        <label
+          className={`${styles.sideContent} atributo-secundario ${sideAttribute.Attribute.name}`}
+          style={{ color: `#${sideAttribute.Attribute.color}` }}
+        >
+          {sideAttribute.show ? sideAttribute.value : '?'}
+        </label>
+      </div>
     </PortraitDraggableResizable>
   );
 }

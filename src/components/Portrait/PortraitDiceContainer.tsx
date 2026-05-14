@@ -133,26 +133,24 @@ export default function PortraitDiceContainer(props: {
       zIndex={200}
       playerId={props.playerId}
     >
-      {(fontSize) => (
-        <div className={styles.diceContainerInner}>
-          <video
-            muted
-            className={`popout${props.showDice ? ' show' : ''} ${styles.dice}`}
-            ref={diceVideo}>
-            <source src='/dice_animation.webm' />
-          </video>
-          <Fade in={diceResult !== null}>
-            <div className={styles.result} ref={diceResultRef} style={{ fontSize }}>
-              {diceResult || lastDiceResult.current}
-            </div>
-          </Fade>
-          <Fade in={diceDescription !== null}>
-            <div className={styles.description} ref={diceDescriptionRef} style={{ fontSize: fontSize * 0.6 }}>
-              {diceDescription || lastDiceDescription.current}
-            </div>
-          </Fade>
-        </div>
-      )}
+      <div className={styles.diceContainerInner}>
+        <video
+          muted
+          className={`popout${props.showDice ? ' show' : ''} ${styles.dice}`}
+          ref={diceVideo}>
+          <source src='/dice_animation.webm' />
+        </video>
+        <Fade in={diceResult !== null}>
+          <div className={styles.result} ref={diceResultRef}>
+            {diceResult || lastDiceResult.current}
+          </div>
+        </Fade>
+        <Fade in={diceDescription !== null}>
+          <div className={styles.description} ref={diceDescriptionRef}>
+            {diceDescription || lastDiceDescription.current}
+          </div>
+        </Fade>
+      </div>
     </PortraitDraggableResizable>
   );
 }

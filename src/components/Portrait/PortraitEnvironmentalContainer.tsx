@@ -115,22 +115,20 @@ function PortraitAttributesContainer(props: {
       zIndex={50}
       playerId={props.playerId}
     >
-      {(fontSize) => (
-        <Fade in={show} mountOnEnter={false} unmountOnExit={false}>
-          <div className={styles.combatInner} style={{ minHeight: show ? 'auto' : 0, opacity: show ? 1 : 0 }}>
-            {attributes.map((attr) => (
-              <Fragment key={attr.Attribute.id}>
-                <span
-                  className={`${styles.attribute} atributo-primario ${attr.Attribute.name}`}
-                  style={{ ...getAttributeStyle(attr.Attribute.color), fontSize }}>
-                  <label>{attr.show ? `${attr.value}/${attr.maxValue}` : '?/?'}</label>
-                </span>
-                <br />
-              </Fragment>
-            ))}
-          </div>
-        </Fade>
-      )}
+      <Fade in={show} mountOnEnter={false} unmountOnExit={false}>
+        <div className={styles.combatInner} style={{ minHeight: show ? 'auto' : 0, opacity: show ? 1 : 0 }}>
+          {attributes.map((attr) => (
+            <Fragment key={attr.Attribute.id}>
+              <span
+                className={`${styles.attribute} atributo-primario ${attr.Attribute.name}`}
+                style={getAttributeStyle(attr.Attribute.color)}>
+                <label>{attr.show ? `${attr.value}/${attr.maxValue}` : '?/?'}</label>
+              </span>
+              <br />
+            </Fragment>
+          ))}
+        </div>
+      </Fade>
     </PortraitDraggableResizable>
   );
 }
@@ -178,26 +176,23 @@ function PortraitNameContainer(props: {
       zIndex={50}
       playerId={props.playerId}
     >
-      {(fontSize) => (
-        <Fade in={show} mountOnEnter={false} unmountOnExit={false}>
-          <div className={styles.nameContainerInner} style={{ ...alignStyle, opacity: show ? 1 : 0 }}>
-            <label
-              className={`${styles.name} nome`}
-              style={{
-                display: 'inline-block',
-                transform: 'rotate(-8deg)',
-                color: `#${props.diceColor}`,
-                textShadow: `2px 2px 0px #000, -1px -1px 0px #000, 1px -1px 0px #000, -1px 1px 0px #000, 0 0 10px #${props.diceColor}, 0 0 20px #${props.diceColor}`,
-                textAlign: 'center',
-                lineHeight: '1.1',
-                fontSize,
-              }}
-            >
-              {playerName.show ? playerName.name || 'Desconhecido' : '???'}
-            </label>
-          </div>
-        </Fade>
-      )}
+      <Fade in={show} mountOnEnter={false} unmountOnExit={false}>
+        <div className={styles.nameContainerInner} style={{ ...alignStyle, opacity: show ? 1 : 0 }}>
+          <label
+            className={`${styles.name} nome`}
+            style={{
+              display: 'inline-block',
+              transform: 'rotate(-8deg)',
+              color: `#${props.diceColor}`,
+              textShadow: `2px 2px 0px #000, -1px -1px 0px #000, 1px -1px 0px #000, -1px 1px 0px #000, 0 0 10px #${props.diceColor}, 0 0 20px #${props.diceColor}`,
+              textAlign: 'center',
+              lineHeight: '1.1',
+            }}
+          >
+            {playerName.show ? playerName.name || 'Desconhecido' : '???'}
+          </label>
+        </div>
+      </Fade>
     </PortraitDraggableResizable>
   );
 }

@@ -104,19 +104,17 @@ export default function PortraitAvatar(props: {
       lockAspectRatio
       playerId={props.playerId}
     >
-      {() => (
-        <Fade in={showAvatar || !!props.debug}>
-          <div style={{ width: '100%', height: '100%', background: props.debug ? 'rgba(80,40,120,0.2)' : 'transparent' }}>
-            <Image
-              src={src}
-              alt='Avatar'
-              onError={() => setSrc('/avatar404.png')}
-              onLoad={() => setShowAvatar(true)}
-              className={styles.avatar}
-            />
-          </div>
-        </Fade>
-      )}
+      <Fade in={showAvatar || !!props.debug}>
+        <div style={{ width: '100%', height: '100%', background: props.debug ? 'rgba(80,40,120,0.2)' : 'transparent' }}>
+          <Image
+            src={src}
+            alt='Avatar'
+            onError={() => setSrc('/avatar404.png')}
+            onLoad={() => setShowAvatar(true)}
+            className={styles.avatar}
+          />
+        </div>
+      </Fade>
     </PortraitDraggableResizable>
   );
 }

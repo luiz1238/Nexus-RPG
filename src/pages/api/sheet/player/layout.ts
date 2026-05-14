@@ -5,6 +5,7 @@ import { broadcast } from '../../../../utils/broadcast';
 
 type LayoutElement = {
   element: string;
+  playerId?: number;
   posX: number;
   posY: number;
   width: number;
@@ -27,19 +28,17 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
   }
 
   if (req.method === 'POST') {
-    const player = req.session.player;
-    if (!player) { res.status(401).end(); return; }
-
     const { element, posX, posY, width, height, rotation, fontSize }: LayoutElement = req.body;
+    const playerId = req.session.player?.id || parseInt(req.body.playerId as any);
 
-    if (!element) { res.status(400).end(); return; }
+    if (!playerId || !element) { res.status(400).end(); return; }
 
     const layout = await prisma.portraitLayout.upsert({
       where: {
-        player_id_element: { player_id: player.id, element },
+        player_id_element: { player_id: playerId, element },
       },
       create: {
-        player_id: player.id,
+        player_id: playerId,
         element,
         posX: posX ?? 0,
         posY: posY ?? 0,
@@ -59,7 +58,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     });
 
     broadcast('portraitLayoutChange', {
-      playerId: player.id,
+      playerId,
       element,
       posX: layout.posX,
       posY: layout.posY,
